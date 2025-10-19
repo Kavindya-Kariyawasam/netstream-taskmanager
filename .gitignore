@@ -1,0 +1,47 @@
+# Backend (Java)
+backend/bin/
+backend/out/
+backend/target/
+*.class
+*.jar
+*.war
+*.log
+
+# Backend IDE
+backend/.idea/
+backend/*.iml
+backend/.vscode/
+backend/.settings/
+backend/.classpath
+backend/.project
+
+# Frontend (React)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Frontend logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Uploaded files
+backend/uploads/
+backend/files/
+
+# Temporary files
+*.tmp
+*.bak
