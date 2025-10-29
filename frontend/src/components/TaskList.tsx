@@ -110,8 +110,8 @@ export default function TaskList() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Tasks</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-slate-900">Tasks</h2>
+          <p className="text-slate-600 mt-1">
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"} total
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function TaskList() {
           <button
             onClick={fetchTasks}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -130,7 +130,7 @@ export default function TaskList() {
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
           >
             <Plus className="w-4 h-4" />
             New Task
@@ -139,7 +139,7 @@ export default function TaskList() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-slate-200">
         {(["all", "pending", "in-progress", "completed"] as const).map(
           (status) => (
             <button
@@ -147,8 +147,8 @@ export default function TaskList() {
               onClick={() => setFilterStatus(status)}
               className={`px-4 py-2 font-medium transition-colors ${
                 filterStatus === status
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
               {status === "all"
@@ -170,19 +170,19 @@ export default function TaskList() {
       {/* Loading State */}
       {loading && (
         <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="ml-3 text-gray-600">Loading tasks...</span>
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <span className="ml-3 text-slate-600">Loading tasks...</span>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg">
           <p className="font-medium">Error</p>
           <p className="text-sm mt-1">{error}</p>
           <button
             onClick={fetchTasks}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+            className="mt-2 text-sm text-rose-600 hover:text-rose-800 underline"
           >
             Try again
           </button>
@@ -191,9 +191,9 @@ export default function TaskList() {
 
       {/* Empty State */}
       {!loading && !error && filteredTasks.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-600 text-lg">No tasks found</p>
-          <p className="text-gray-500 text-sm mt-2">
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-slate-200">
+          <p className="text-slate-600 text-lg">No tasks found</p>
+          <p className="text-slate-500 text-sm mt-2">
             {filterStatus === "all"
               ? "Create your first task to get started!"
               : `No ${filterStatus} tasks yet`}
@@ -201,7 +201,7 @@ export default function TaskList() {
           {filterStatus === "all" && (
             <button
               onClick={() => setShowForm(true)}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="mt-4 px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
             >
               Create Task
             </button>
