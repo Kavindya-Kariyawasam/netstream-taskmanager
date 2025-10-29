@@ -1,39 +1,46 @@
-import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
+import TaskList from "./components/TaskList";
 
 function App() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: Fetch tasks from TCP server
-    setLoading(false);
-  }, []);
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">
-            NetStream TaskManager
-          </h1>
-          <button className="relative p-2 text-gray-600 hover:text-gray-900">
-            <Bell className="w-6 h-6" />
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-          </button>
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                NetStream TaskManager
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Real-time collaborative task management
+              </p>
+            </div>
+            <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
+              <Bell className="w-6 h-6" />
+              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Tasks</h2>
-          {loading ? (
-            <p className="text-gray-500">Loading tasks...</p>
-          ) : (
-            <p className="text-gray-500">No tasks yet!</p>
-          )}
-        </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <TaskList />
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center text-sm text-gray-500">
+            <p>NetStream TaskManager - Network Programming Project</p>
+            <p className="mt-1">
+              TCP Server (Port 8080) | UDP Server (Port 9090) | NIO Server (Port
+              8081)
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
