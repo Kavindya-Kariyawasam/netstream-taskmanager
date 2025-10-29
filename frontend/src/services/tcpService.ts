@@ -8,11 +8,12 @@ import type {
   DeleteTaskRequest,
 } from "@/types";
 
-const TCP_API_URL = "http://localhost:8080";
+// Connect to HTTP Gateway (for browser clients) which forwards to the TCP server
+const TCP_GATEWAY_URL = "http://localhost:3000";
 
 // Create axios instance
 const tcpClient = axios.create({
-  baseURL: TCP_API_URL,
+  baseURL: TCP_GATEWAY_URL,
   timeout: 5000,
   headers: {
     "Content-Type": "application/json",
