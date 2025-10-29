@@ -24,7 +24,7 @@ All servers share a common thread-safe data layer and use a centralized thread p
 
 ### Setup
 
-```bash
+````bash
 # Navigate to backend directory
 cd backend
 
@@ -38,14 +38,44 @@ javac -d bin -cp "lib/*" src/shared/*.java src/tcp/*.java src/udp/*.java src/nio
 
 # Run the application
 java -cp "bin:lib/*" Main
+## Compile & run (platform-specific)
+
+Recommended: use the included helper on Windows:
+
+```powershell
+# from repository root
+powershell -ExecutionPolicy Bypass -File backend\compile.ps1
+# then run
+java -cp "backend/bin;backend/lib/*" Main
+````
+
+Manual commands:
+
+Windows (PowerShell) — from the `backend` folder:
+
+```powershell
+Get-ChildItem -Path .\src -Recurse -Filter *.java | ForEach-Object { '"' + ($_.FullName -replace '\\','/') + '"' } | Out-File -FilePath .\files.txt -Encoding ascii
+cmd /c "javac -d .\bin -cp .\lib\gson-2.10.1.jar @.\files.txt"
+java -cp "bin;lib/*" Main
 ```
+
+macOS / Linux (bash) — from the `backend` folder:
+
+```bash
+# create a file list and compile
+find src -name '*.java' > files.txt
+javac -d bin -cp "lib/*" @files.txt
+java -cp "bin:lib/*" Main
+```
+
+````
 
 **Note for Windows users**: Use semicolon (`;`) instead of colon (`:`) in classpath:
 
 ```bash
 javac -d bin -cp "lib/*" src/shared/*.java src/tcp/*.java src/Main.java
 java -cp "bin;lib/*" Main
-```
+````
 
 ### Expected Output
 
