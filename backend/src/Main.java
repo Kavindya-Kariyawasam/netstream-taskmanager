@@ -3,22 +3,27 @@ public class Main {
         System.out.println("[INFO] Starting NetStream TaskManager...");
         System.out.println("=" + "=".repeat(50));
 
-        // Currently starting only the TCP server
-        
+        // Start TCP server (PURE SOCKET)
         tcp.TCPTaskServer tcpServer = new tcp.TCPTaskServer(8080);
-        
-        // Start TCP server in a separate thread
         Thread tcpThread = new Thread(() -> tcpServer.start());
         tcpThread.start();
-        
+
+        // Start HTTP Gateway (for browser access)
+        gateway.HttpGateway gateway = new gateway.HttpGateway(3000, "localhost", 8080);
+        Thread gatewayThread = new Thread(() -> gateway.start());
+        gatewayThread.start();
+
         System.out.println("=" + "=".repeat(50));
         System.out.println("[INFO] All servers ready!");
+        System.out.println("[INFO] TCP Server: localhost:8080 (pure socket)");
+        System.out.println("[INFO] HTTP Gateway: localhost:3000 (for browser)");
         System.out.println("Press Ctrl+C to stop");
         
         // Shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n[INFO] Shutting down...");
             tcpServer.stop();
+            gateway.stop();
         }));
     }
 }
