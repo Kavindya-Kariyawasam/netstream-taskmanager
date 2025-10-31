@@ -1,13 +1,14 @@
 package nio;
 
 import com.google.gson.Gson;
-import com.sun.net.httpserver.Headers;
 
 import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+
+
 
 class RequestRouter {
     private final SocketChannel channel;
@@ -40,7 +41,7 @@ class RequestRouter {
         String method = parts[0].toUpperCase(Locale.ROOT);
         String path = parts[1];
 
-//        Headers headers = Headers.parse(bis);
+        Headers headers = Headers.parse(bis);
 
 //        if ("POST".equals(method) && "/upload".equals(path)) {
 //            FileUploadHandler uploadHandler = new FileUploadHandler(bis, out, headers);
@@ -54,7 +55,7 @@ class RequestRouter {
 //                    new SimpleResponse("error", "Not found")
 //            ));
 //        }
-        //safeClose();
+//        safeClose();
     }
     private void safeClose() {
         try{
