@@ -59,9 +59,13 @@ public class NIOFileServer {
     }
     private void handleClient(SocketChannel channel) {
         try{
-
+            RequestRouter router = new RequestRouter(channel, gson);
+            router.route();
         }catch(Exception e) {
-
+            System.out.println("Error handling client: " + e.getMessage());
+            try{
+                channel.close();
+            }catch(IOException ex){}
         }
     }
     public static void main(String[] args) throws IOException {
