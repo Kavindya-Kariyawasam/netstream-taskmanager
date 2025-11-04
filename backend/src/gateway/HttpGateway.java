@@ -41,13 +41,21 @@ public class HttpGateway {
 
     private void handleBrowserRequest(Socket browserClient) {
         try (
-            BufferedReader browserIn = new BufferedReader(
-                new InputStreamReader(browserClient.getInputStream()));
-            PrintWriter browserOut = new PrintWriter(browserClient.getOutputStream(), true)
-        ) {
+                BufferedReader browserIn = new BufferedReader(
+                        new InputStreamReader(browserClient.getInputStream()));
+                PrintWriter browserOut = new PrintWriter(browserClient.getOutputStream(), true)) {
             // Read HTTP request from browser
             String requestLine = browserIn.readLine();
             System.out.println("[INFO] HTTP Request: " + requestLine);
+
+            // Parse the request path
+            String requestPath = "/";
+            if (requestLine != null && requestLine.contains(" ")) {
+                String[] parts = requestLine.split(" ");
+                if (parts.length >= 2) {
+                    requestPath = parts[1];
+                }
+            }
 
             // Read and skip HTTP headers
             String line;
@@ -58,6 +66,12 @@ public class HttpGateway {
                 }
             }
 
+            // Handle OPTIONS request (CORS preflight)
+            if (requestLine != null && requestLine.startsWith("OPTIONS")) {
+                sendCorsResponse(browserOut);
+                return;
+            }
+
             // Read JSON body from browser
             String jsonBody = "";
             if (contentLength > 0) {
@@ -66,13 +80,21 @@ public class HttpGateway {
                 jsonBody = new String(buffer);
             }
 
+            System.out.println("[DEBUG] Request Path: " + requestPath);
             System.out.println("[DEBUG] JSON Body: " + jsonBody);
 
-            // Forward to TCP server
-            String tcpResponse = forwardToTcpServer(jsonBody);
+            // Route to appropriate service based on path
+            String response;
+            if (requestPath.startsWith("/url-service")) {
+                // Forward to URL Service (port 8082)
+                response = forwardToService("localhost", 8082, jsonBody);
+            } else {
+                // Forward to TCP server (port 8080)
+                response = forwardToService(tcpHost, tcpPort, jsonBody);
+            }
 
             // Send HTTP response back to browser
-            sendHttpResponse(browserOut, tcpResponse);
+            sendHttpResponse(browserOut, response);
 
         } catch (IOException e) {
             System.err.println("Error handling browser request: " + e.getMessage());
@@ -85,27 +107,36 @@ public class HttpGateway {
         }
     }
 
-    private String forwardToTcpServer(String jsonRequest) {
+    private String forwardToService(String host, int port, String jsonRequest) {
         try (
-            Socket tcpSocket = new Socket(tcpHost, tcpPort);
-            PrintWriter tcpOut = new PrintWriter(tcpSocket.getOutputStream(), true);
-            BufferedReader tcpIn = new BufferedReader(
-                new InputStreamReader(tcpSocket.getInputStream()))
-        ) {
-            // Send JSON to TCP server
-            tcpOut.println(jsonRequest);
-            System.out.println("[DEBUG] Forwarded to TCP: " + jsonRequest);
+                Socket socket = new Socket(host, port);
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()))) {
+            // Send JSON to service
+            out.println(jsonRequest);
+            out.println(); // Empty line to indicate end of request
+            System.out.println("[DEBUG] Forwarded to " + host + ":" + port + " -> " + jsonRequest);
 
-            // Read JSON response from TCP server
-            String response = tcpIn.readLine();
-            System.out.println("[DEBUG] Received from TCP: " + response);
+            // Read JSON response from service
+            String response = in.readLine();
+            System.out.println("[DEBUG] Received from " + host + ":" + port + " -> " + response);
 
-            return response;
+            return response != null ? response : "{\"status\":\"error\",\"message\":\"No response from server\"}";
 
         } catch (IOException e) {
-            System.err.println("Error communicating with TCP server: " + e.getMessage());
-            return "{\"status\":\"error\",\"message\":\"Cannot connect to TCP server\"}";
+            System.err.println("Error communicating with " + host + ":" + port + " - " + e.getMessage());
+            return "{\"status\":\"error\",\"message\":\"Cannot connect to service at " + host + ":" + port + "\"}";
         }
+    }
+
+    private void sendCorsResponse(PrintWriter out) {
+        out.println("HTTP/1.1 204 No Content");
+        out.println("Access-Control-Allow-Origin: *");
+        out.println("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+        out.println("Access-Control-Allow-Headers: Content-Type");
+        out.println();
+        out.flush();
     }
 
     private void sendHttpResponse(PrintWriter out, String jsonResponse) {
