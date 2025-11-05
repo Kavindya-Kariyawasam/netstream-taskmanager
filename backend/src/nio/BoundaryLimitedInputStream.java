@@ -1,6 +1,7 @@
 package nio;
 
 import java.io.*;
+import java.util.Arrays;
 
 public class BoundaryLimitedInputStream extends InputStream {
     private final InputStream in;
@@ -50,6 +51,15 @@ public class BoundaryLimitedInputStream extends InputStream {
             return read();
 
         }
+
+        if(this.buffer == null){
+            if(bufferIndex < buffer.length){
+                return buffer[bufferIndex++] & 0xFF;
+            }else{
+                return -1;
+            }
+        }
+
         if(window.size() > lookFor.length){
             byte[] windowArray  = window.toByteArray();
             int returnBytes = windowArray[0] & 0xFF;
@@ -90,7 +100,6 @@ public class BoundaryLimitedInputStream extends InputStream {
         super.close();
     }
 
-    // Helper to transfer fully
     @Override
     public long transferTo(OutputStream out) throws IOException {
         byte[] buf = new byte[8192];

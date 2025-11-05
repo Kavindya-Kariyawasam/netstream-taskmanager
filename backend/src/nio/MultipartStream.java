@@ -5,18 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Minimal streaming multipart/form-data parser.
- *
- * Usage:
- *  MultipartStream ms = new MultipartStream(inputStream, boundaryBytes, maxSize);
- *  while (ms.hasNextPart()) {
- *      Part p = ms.nextPart();
- *      // p.getHeaders(), p.getBodyStream()
- *  }
- *
- * This implementation reads parts in sequence and prevents loading entire file into memory.
- */
 class MultipartStream {
 
     private final InputStream in;
@@ -45,7 +33,6 @@ class MultipartStream {
     }
 
     public Part nextPart() throws IOException {
-        // Read headers for part
         Map<String, String> headers = new HashMap<>();
         String line;
         while ((line = readLine(in)) != null && !line.isEmpty()) {
@@ -54,8 +41,6 @@ class MultipartStream {
                 headers.put(line.substring(0, idx).trim().toLowerCase(), line.substring(idx+1).trim());
             }
         }
-        // Now the body stream: it must be read until boundary occurs.
-        // We'll provide a limited InputStream that stops at boundary.
         BoundaryLimitedInputStream blis = new BoundaryLimitedInputStream(in, boundary, maxSize);
         return new Part(headers, blis);
     }
@@ -78,7 +63,6 @@ class MultipartStream {
         }
     }
 
-    // Helper to read CRLF-terminated lines
     private static String readLine(InputStream in) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int prev = -1;

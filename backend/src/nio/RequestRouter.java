@@ -43,19 +43,19 @@ class RequestRouter {
 
         Headers headers = Headers.parse(bis);
 
-//        if ("POST".equals(method) && "/upload".equals(path)) {
-//            FileUploadHandler uploadHandler = new FileUploadHandler(bis, out, headers);
-//            uploadHandler.handle();
-//        } else if ("GET".equals(method) && path.startsWith("/download/")) {
-//            String fileId = path.substring("/download/".length());
-//            FileDownloadHandler downloadHandler = new FileDownloadHandler(out, fileId, headers);
-//            downloadHandler.handle();
-//        } else {
-//            writeSimpleResponse(out, 404, "application/json", gson.toJson(
-//                    new SimpleResponse("error", "Not found")
-//            ));
-//        }
-//        safeClose();
+        if ("POST".equals(method) && "/upload".equals(path)) {
+            FileUploadHandler uploadHandler = new FileUploadHandler(bis, out, headers);
+            uploadHandler.handle();
+        } else if ("GET".equals(method) && path.startsWith("/download/")) {
+            String fileId = path.substring("/download/".length());
+            FileDownloadHandler downloadHandler = new FileDownloadHandler(out, fileId, headers);
+            downloadHandler.handle();
+        } else {
+            writeSimpleResponse(out, 404, "application/json", gson.toJson(
+                    new SimpleResponse("error", "Not found")
+            ));
+        }
+        safeClose();
     }
     private void safeClose() {
         try{
