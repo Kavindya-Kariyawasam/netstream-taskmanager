@@ -18,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FileUploadHandler {
     private static final long MAX_FILE_BYTES = 50L * 1024L * 1024L;
-    private static final Path STORAGE_DIR = Paths.get("backend","files");
+    // Store uploads in a top-level 'uploads' directory (project root)
+    private static final Path STORAGE_DIR = Paths.get("uploads");
     private static final Map<String,FileMetadata> METADATA_STORE = new ConcurrentHashMap<>();
 
     private final BufferedInputStream in;
@@ -40,7 +41,7 @@ public class FileUploadHandler {
     public void handle() throws IOException {
         Optional<String> ctOpt = headers.get("Content-Type");
         if (ctOpt.isEmpty() || !ctOpt.get().startsWith("multipart/form-data")) {
-            writeJsonResponse(400, Map.of("status ", "error ", "message ", "Content-Type must be multipart/form-data "));
+            writeJsonResponse(400, Map.of("status", "error", "message", "Content-Type must be multipart/form-data"));
             return;
         }
         String contentType = ctOpt.get();
@@ -71,25 +72,31 @@ public class FileUploadHandler {
                 fileId = "file_"+ System.currentTimeMillis()+"_"+ UUID.randomUUID().toString().substring(0,8);
                 storedFile = STORAGE_DIR.resolve(fileId+"_"+safeName);
 
-                try(FileChannel fileChannel = FileChannel.open(storedFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)){
+                try (FileChannel fileChannel = FileChannel.open(storedFile, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
                     byte[] buffer = new byte[8192];
                     int read;
                     long bytesWritten = 0;
                     InputStream pis = part.getBodyStream();
-                    while((read=pis.read(buffer))!=-1){
+                    while ((read = pis.read(buffer)) != -1) {
                         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer, 0, read);
                         while (byteBuffer.hasRemaining()) fileChannel.write(byteBuffer);
                         bytesWritten += read;
-                        if(bytesWritten>MAX_FILE_BYTES){
-                            try{
-                                Files.deleteIfExists(storedFile);
-                            }catch(IOException ignored){
-                                writeJsonResponse(413,Map.of("status", "error", "message", "File too large (Max 50MB)"));
-                                return;
+                        if (bytesWritten > MAX_FILE_BYTES) {
+                            // too large: close and delete file, then respond
+                            try {
+                                fileChannel.close();
+                            } catch (IOException ignore) {
                             }
+                            try {
+                                Files.deleteIfExists(storedFile);
+                            } catch (IOException ignored) {
+                                // ignore delete failures
+                            }
+                            writeJsonResponse(413, Map.of("status", "error", "message", "File too large (Max 50MB)"));
+                            return;
                         }
                     }
-                    totalBytes += read;
+                    totalBytes += bytesWritten;
                 }
                 FileMetadata meta = new FileMetadata(fileId,originalFileName,storedFile.toString(),totalBytes,formFields.get("taskId"),formFields.get("description"));
                 METADATA_STORE.put(fileId,meta);
