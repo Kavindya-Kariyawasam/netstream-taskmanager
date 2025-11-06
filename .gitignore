@@ -45,3 +45,9 @@ backend/files/
 # Temporary files
 *.tmp
 *.bak
+/uploads/
+/backend/logs/
+*.out
+*.err
+test*.txt
+test*.bin
