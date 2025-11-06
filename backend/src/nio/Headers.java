@@ -20,7 +20,7 @@ public class Headers {
             int index = line.indexOf(':');
             if(index > 0) {
                 String name = line.substring(0, index).trim().toLowerCase(Locale.ROOT);
-                String value = line.substring(0, index);
+                String value = line.substring(index + 1).trim();
                 headers.map.put(name, value);
             }
         }
