@@ -60,7 +60,9 @@ public class FileUploadHandler {
 
         while(multipart.hasNextPart()){
             MultipartStream.Part part = multipart.nextPart();
-            String disposition = part.getHeaders().getOrDefault("Content-Disposition", "");
+            // Part headers are available in part.getHeaders()
+            // MultipartStream lower-cases header names; lookup using lower-case key
+            String disposition = part.getHeaders().getOrDefault("content-disposition", "");
             String name = parseName(disposition);
             if(name==null) continue;
 
