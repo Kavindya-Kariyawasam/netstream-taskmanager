@@ -16,8 +16,15 @@ Write-Host "Preparing file list of Java sources..."
 Get-ChildItem -Path .\src -Recurse -Filter *.java | ForEach-Object { '"' + ($_.FullName -replace '\\','/') + '"' } | Out-File -FilePath .\files.txt -Encoding ascii
 
 Write-Host "Compiling Java sources into .\bin (using backend/lib/gson-2.10.1.jar)"
+# Ensure a clean output directory
+if (Test-Path -Path .\bin) {
+  Remove-Item -Recurse -Force .\bin
+}
+New-Item -ItemType Directory -Path .\bin | Out-Null
+
 # Use cmd /c so javac @argfile semantics and quoting behave consistently on Windows
-cmd /c "javac -d .\bin -cp .\lib\gson-2.10.1.jar @.\files.txt"
+# Force compilation target to Java 17 to avoid UnsupportedClassVersionError when runtime is older
+cmd /c "javac --release 17 -d .\bin -cp .\lib\gson-2.10.1.jar @.\files.txt"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "COMPILATION SUCCEEDED"
