@@ -17,57 +17,79 @@ public class BoundaryLimitedInputStream extends InputStream {
         this.boundary = boundary;
         this.maxBytes = maxBytes;
 
-        byte[] prefix = "\r\n".getBytes();
-        this.lookFor =new byte[prefix.length + boundary.length];
-        System.arraycopy(prefix, 0, lookFor, 0, prefix.length);
-        System.arraycopy(boundary, 0, lookFor, prefix.length, boundary.length);
+    // Multipart part boundary in the stream appears as CRLF + "--" + boundary
+    byte[] prefix = "\r\n--".getBytes();
+    this.lookFor = new byte[prefix.length + boundary.length];
+    System.arraycopy(prefix, 0, lookFor, 0, prefix.length);
+    System.arraycopy(boundary, 0, lookFor, prefix.length, boundary.length);
 
     }
 
     @Override
     public int read() throws IOException {
-        if (ended) return -1;
+        // If we've already reached the end (boundary found and buffer consumed)
+        if (ended && buffer == null) return -1;
+
+        // If there are bytes buffered to return (from when we detected the boundary), serve them first
+        if (buffer != null) {
+            if (bufferIndex < buffer.length) {
+                return buffer[bufferIndex++] & 0xFF;
+            } else {
+                // buffer fully consumed
+                buffer = null;
+                bufferIndex = 0;
+                // If ended flag is set, signal EOF
+                if (ended) return -1;
+            }
+        }
+
         int currentByte = in.read();
         if (currentByte == -1) {
             ended = true;
             return -1;
         }
-        readSoFar++;
 
+        readSoFar++;
         if (readSoFar > maxBytes) {
             throw new IOException("Part exceeds maximum allowed size");
         }
+
         window.write(currentByte);
 
-        if(endsWith(window.toByteArray(),lookFor)){
-            byte[] windowBytes = window.toByteArray();
+        byte[] windowBytes = window.toByteArray();
+        // Check if the lookFor sequence (CRLF + boundary) is at the end of the window
+        if (endsWith(windowBytes, lookFor)) {
             int outCount = windowBytes.length - lookFor.length;
-
-            byte[] outBytes = new byte[outCount];
-            ended = true;
-
-            this.buffer = outBytes;
-            this.bufferIndex = 0;
-            return read();
-
-        }
-
-        if(this.buffer == null){
-            if(bufferIndex < buffer.length){
-                return buffer[bufferIndex++] & 0xFF;
-            }else{
-                return -1;
+            if (outCount > 0) {
+                // copy bytes before the boundary into buffer to be returned
+                buffer = Arrays.copyOf(windowBytes, outCount);
+                bufferIndex = 0;
+            } else {
+                buffer = null;
             }
-        }
-
-        if(window.size() > lookFor.length){
-            byte[] windowArray  = window.toByteArray();
-            int returnBytes = windowArray[0] & 0xFF;
-
+            ended = true;
+            // clear window
             window.reset();
-            window.write(windowArray, 1, windowArray.length - 1);
-            return returnBytes;
+            // serve first byte from buffer (if present)
+            if (buffer != null) {
+                return buffer[bufferIndex++] & 0xFF;
+            }
+            return -1;
         }
+
+        // If the window has grown larger than the lookFor sequence, we can emit the earliest byte
+        if (window.size() > lookFor.length) {
+            byte[] wa = window.toByteArray();
+            int out = wa[0] & 0xFF;
+            // shift window left by one
+            window.reset();
+            if (wa.length - 1 > 0) {
+                window.write(wa, 1, wa.length - 1);
+            }
+            return out;
+        }
+
+        // Need more bytes to decide — read again
         return read();
     }
 
