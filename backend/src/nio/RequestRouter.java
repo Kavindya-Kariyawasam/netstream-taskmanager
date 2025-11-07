@@ -86,7 +86,7 @@ class RequestRouter {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         bw.write("HTTP/1.1 " + statusCode + "\r\n");
         bw.write("Content-Type: " + contentType + "\r\n");
-        bw.write("Content-Length: " + body.getBytes(StandardCharsets.UTF_8) + "\r\n");
+        bw.write("Content-Length: " + body.getBytes(StandardCharsets.UTF_8).length + "\r\n");
         bw.write("\r\n");
         bw.write(body);
         bw.flush();

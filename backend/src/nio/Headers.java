@@ -20,12 +20,13 @@ public class Headers {
             int index = line.indexOf(':');
             if(index > 0) {
                 String name = line.substring(0, index).trim().toLowerCase(Locale.ROOT);
-                String value = line.substring(0, index);
+                String value = line.substring(index + 1).trim(); // <-- FIXED
                 headers.map.put(name, value);
             }
         }
         return headers;
     }
+
     public Optional<String> get(String name) {
         return Optional.ofNullable(map.get(name.toLowerCase(Locale.ROOT)));
     }

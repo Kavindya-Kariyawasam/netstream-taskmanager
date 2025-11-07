@@ -44,7 +44,7 @@ public class NIOFileServer {
                 SelectionKey key = iterator.next();
                 iterator.remove();
 
-                if (key.isValid()) continue;
+                if (!key.isValid()) continue;
 
                 if (key.isAcceptable()) {
                     ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();

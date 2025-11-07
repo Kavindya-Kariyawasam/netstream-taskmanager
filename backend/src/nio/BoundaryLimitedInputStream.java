@@ -26,50 +26,52 @@ public class BoundaryLimitedInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
+        if (buffer != null && bufferIndex < buffer.length) {
+            return buffer[bufferIndex++] & 0xFF;
+        }
         if (ended) return -1;
+
         int currentByte = in.read();
         if (currentByte == -1) {
             ended = true;
             return -1;
         }
-        readSoFar++;
 
+        readSoFar++;
         if (readSoFar > maxBytes) {
             throw new IOException("Part exceeds maximum allowed size");
         }
+
         window.write(currentByte);
 
-        if(endsWith(window.toByteArray(),lookFor)){
-            byte[] windowBytes = window.toByteArray();
-            int outCount = windowBytes.length - lookFor.length;
+        byte[] winBytes = window.toByteArray();
 
+        if (endsWith(winBytes, lookFor)) {
+            // boundary reached
+            int outCount = winBytes.length - lookFor.length;
+            if (outCount < 0) outCount = 0;
             byte[] outBytes = new byte[outCount];
+            System.arraycopy(winBytes, 0, outBytes, 0, outCount);
+            buffer = outBytes;
+            bufferIndex = 0;
             ended = true;
-
-            this.buffer = outBytes;
-            this.bufferIndex = 0;
-            return read();
-
+            if (buffer.length == 0) return -1;
+            return buffer[bufferIndex++] & 0xFF;
         }
 
-        if(this.buffer == null){
-            if(bufferIndex < buffer.length){
-                return buffer[bufferIndex++] & 0xFF;
-            }else{
-                return -1;
-            }
-        }
-
-        if(window.size() > lookFor.length){
-            byte[] windowArray  = window.toByteArray();
-            int returnBytes = windowArray[0] & 0xFF;
-
+        // If window larger than lookFor, flush first byte
+        if (winBytes.length > lookFor.length) {
+            int result = winBytes[0] & 0xFF;
             window.reset();
-            window.write(windowArray, 1, windowArray.length - 1);
-            return returnBytes;
+            window.write(winBytes, 1, winBytes.length - 1);
+            return result;
         }
+
+        // otherwise, keep reading more bytes
         return read();
     }
+
+
 
     private byte[] buffer = null;
     private int bufferIndex = 0;
