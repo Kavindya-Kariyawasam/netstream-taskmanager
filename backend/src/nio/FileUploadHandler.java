@@ -30,34 +30,25 @@ public class FileUploadHandler {
         }
     }
 
-    public void handle() throws IOException {
+    public String handle() throws IOException {
         Optional<String> ctOpt = headers.get("content-type");
         if (ctOpt.isEmpty() || !ctOpt.get().startsWith("multipart/form-data")) {
-            writeJsonResponse(400, Map.of("status", "error", "message", "Content-Type must be multipart/form-data"));
-            return;
+            return null; // let router handle error response
         }
 
         String contentType = ctOpt.get();
         String boundary = extractBoundary(contentType);
-        System.out.println("➡️ Extracted boundary: " + boundary);
-
-        if (boundary == null) {
-            writeJsonResponse(400, Map.of("status", "error", "message", "Missing boundary"));
-            return;
-        }
+        if (boundary == null) return null;
 
         MultipartStream multipart = new MultipartStream(in, boundary.getBytes(StandardCharsets.UTF_8), MAX_FILE_BYTES);
         Map<String, String> formFields = new HashMap<>();
         String fileId = null;
         String originalFileName = null;
         Path storedFile = null;
-        long totalBytes = 0;
-
-        System.out.println("🚀 Starting to read multipart parts...");
 
         while (multipart.hasNextPart()) {
             MultipartStream.Part part = multipart.nextPart();
-            System.out.println("🧾 Got a new part: " + part.getHeaders());
+            if (part == null) break;
 
             String disposition = part.getHeaders().getOrDefault("content-disposition", "");
             String name = parseName(disposition);
@@ -76,57 +67,24 @@ public class FileUploadHandler {
 
                     byte[] buffer = new byte[8192];
                     int read;
-                    long bytesWritten = 0;
-
                     while ((read = pis.read(buffer)) != -1) {
                         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer, 0, read);
                         while (byteBuffer.hasRemaining()) fileChannel.write(byteBuffer);
-                        bytesWritten += read;
-
-                        if (bytesWritten % (1024 * 10) == 0) { // every 10KB
-                            System.out.println("📦 Written " + bytesWritten + " bytes so far...");
-                        }
-
-                        if (bytesWritten > MAX_FILE_BYTES) {
-                            try { Files.deleteIfExists(storedFile); } catch (IOException ignored) {}
-                            writeJsonResponse(413, Map.of("status", "error", "message", "File too large (Max 50MB)"));
-                            return;
-                        }
                     }
-
-// 🔚 Reached end of file part
-                    System.out.println("✅ Finished writing file: " + storedFile + " (" + bytesWritten + " bytes)");
-
-
-                    totalBytes += bytesWritten;
-                    System.out.println("✅ File saved successfully: " + storedFile + " (" + bytesWritten + " bytes)");
                 }
 
-                FileMetadata meta = new FileMetadata(fileId, originalFileName, storedFile.toString(), totalBytes,
+                FileMetadata meta = new FileMetadata(fileId, originalFileName, storedFile.toString(), Files.size(storedFile),
                         formFields.get("taskId"), formFields.get("description"));
                 METADATA_STORE.put(fileId, meta);
-
             } else {
-                // Read text fields
-                String value = new String(part.readAllBytes(), StandardCharsets.UTF_8);
-                formFields.put(name, value);
+                formFields.put(name, new String(part.readAllBytes(), StandardCharsets.UTF_8));
             }
         }
 
-        if (fileId == null) {
-            writeJsonResponse(400, Map.of("status", "error", "message", "No file part 'file' found"));
-            return;
-        }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "success");
-        response.put("fileId", fileId);
-        response.put("fileName", originalFileName);
-        response.put("size", totalBytes);
-
-        writeJsonResponse(200, response);
-        System.out.println("🎯 Upload completed, response sent to client ✅");
+        return storedFile != null ? storedFile.getFileName().toString() : null;
     }
+
+    // ---------------------- Helper Methods --------------------------
 
     private static String sanitizeFileName(String name) {
         return name.replaceAll("[^a-zA-Z0-9._-]", "_");
@@ -179,6 +137,9 @@ public class FileUploadHandler {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8));
         writer.write("HTTP/1.1 " + statusCode + " OK\r\n");
         writer.write("Content-Type: application/json\r\n");
+        writer.write("Access-Control-Allow-Origin: *\r\n");
+        writer.write("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
+        writer.write("Access-Control-Allow-Headers: Content-Type\r\n");
         writer.write("Content-Length: " + body.getBytes(StandardCharsets.UTF_8).length + "\r\n");
         writer.write("\r\n");
         writer.write(body);
