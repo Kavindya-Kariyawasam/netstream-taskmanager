@@ -166,6 +166,8 @@ Simple Tailwind CSS import:
 - Dropdown list of recent notifications
 - Listens to UDP broadcasts from backend
 
+Note: The notification component includes an inbox UI (bell) where users can delete or dismiss notifications; the frontend listens to UDP broadcasts and updates the UI in real time.
+
 ### File Operations (NIO Service)
 
 #### `FileUpload.tsx`
@@ -174,6 +176,8 @@ Simple Tailwind CSS import:
 - File size validation (max 50MB)
 - Upload progress indicator
 - Connects to NIO server on port 8081
+
+Note: The frontend file upload widget supports browser-based multipart uploads (drag & drop) and works with the backend NIO endpoint which returns a file ID on success.
 
 ### External Integrations (URL Service)
 
