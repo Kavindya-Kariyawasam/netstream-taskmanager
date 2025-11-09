@@ -3,6 +3,9 @@ package gateway;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import shared.DataStore;
+import shared.JsonUtils;
+import shared.NotificationBroadcaster;
 
 public class HttpGateway {
     private final int httpPort;
@@ -48,6 +51,19 @@ public class HttpGateway {
             // Read HTTP request from browser
             String requestLine = browserIn.readLine();
             System.out.println("[INFO] HTTP Request: " + requestLine);
+
+            // Quick route: GET /notifications -> return stored notifications
+            if (requestLine != null && requestLine.startsWith("GET /notifications ")) {
+                String jsonResponse = JsonUtils.createSuccessResponse(DataStore.getNotifications());
+                sendHttpResponse(browserOut, jsonResponse);
+                return;
+            }
+
+            // SSE endpoint: GET /events -> stream real-time notifications
+            if (requestLine != null && requestLine.startsWith("GET /events ")) {
+                handleEventStream(browserClient, browserIn, browserOut);
+                return;
+            }
 
             // Read and skip HTTP headers
             String line;
@@ -119,6 +135,57 @@ public class HttpGateway {
         out.println();
         out.println(jsonResponse);
         out.flush();
+    }
+
+    /**
+     * Handle Server-Sent Events (SSE) stream for real-time notifications
+     * Network concept: Persistent HTTP connection with chunked transfer
+     */
+    private void handleEventStream(Socket socket, BufferedReader in, PrintWriter out) {
+        try {
+            // Skip remaining HTTP headers
+            String line;
+            while ((line = in.readLine()) != null && !line.isEmpty()) {
+                // Skip headers
+            }
+
+            // Send SSE headers
+            out.println("HTTP/1.1 200 OK");
+            out.println("Content-Type: text/event-stream");
+            out.println("Cache-Control: no-cache");
+            out.println("Connection: keep-alive");
+            out.println("Access-Control-Allow-Origin: *");
+            out.println();
+            out.flush();
+
+            System.out.println("[SSE] Client connected for event stream");
+
+            // Register client with broadcaster
+            NotificationBroadcaster.addHttpClient(out);
+
+            // Keep connection alive - send periodic heartbeat
+            while (!socket.isClosed() && socket.isConnected()) {
+                try {
+                    // Send heartbeat every 30 seconds to keep connection alive
+                    Thread.sleep(30000);
+                    out.println(": heartbeat");
+                    out.println();
+                    out.flush();
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("[SSE] Client disconnected: " + e.getMessage());
+        } finally {
+            NotificationBroadcaster.removeHttpClient(out);
+            try {
+                socket.close();
+            } catch (IOException e) {
+                // Ignore
+            }
+        }
     }
 
     public void stop() {
