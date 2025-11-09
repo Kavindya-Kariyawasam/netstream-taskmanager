@@ -47,3 +47,29 @@ export interface DeleteTaskRequest {
     taskId: string;
   };
 }
+
+export interface Notification {
+  id: string;
+  type: "TASK_CREATED" | "TASK_UPDATED" | "TASK_DELETED" | "TASK_ASSIGNED";
+  taskId: string;
+  message: string;
+  timestamp: number;
+  read: boolean;
+}
+
+export interface Quote {
+  quote: string;
+  author: string;
+}
+
+export interface Avatar {
+  avatarUrl: string;
+  email: string;
+}
+
+export interface FileUploadResponse {
+  status: string;
+  fileId: string;
+  fileName: string;
+  size: number;
+}
