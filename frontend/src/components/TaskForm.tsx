@@ -31,6 +31,9 @@ export default function TaskForm({ task, onSubmit, onClose }: TaskFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Close the modal first so the UI is responsive, then submit the data.
+    // Parent can show any alerts/toasts after receiving the submit.
+    onClose();
     onSubmit(formData);
   };
 
