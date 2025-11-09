@@ -24,7 +24,7 @@ All servers share a common thread-safe data layer and use a centralized thread p
 
 ### Setup
 
-```bash
+````bash
 # Navigate to backend directory
 cd backend
 
@@ -38,13 +38,44 @@ javac -d bin -cp "lib/*" src/shared/*.java src/tcp/*.java src/udp/*.java src/nio
 
 # Run the application
 java -cp "bin:lib/*" Main
+## Compile & run (platform-specific)
+
+Recommended: use the included helper on Windows:
+
+```powershell
+# from repository root
+powershell -ExecutionPolicy Bypass -File backend\compile.ps1
+# then run
+java -cp "backend/bin;backend/lib/*" Main
+````
+
+Manual commands:
+
+Windows (PowerShell) — from the `backend` folder:
+
+```powershell
+Get-ChildItem -Path .\src -Recurse -Filter *.java | ForEach-Object { '"' + ($_.FullName -replace '\\','/') + '"' } | Out-File -FilePath .\files.txt -Encoding ascii
+cmd /c "javac -d .\bin -cp .\lib\gson-2.10.1.jar @.\files.txt"
+java -cp "bin;lib/*" Main
 ```
 
+macOS / Linux (bash) — from the `backend` folder:
+
+```bash
+# create a file list and compile
+find src -name '*.java' > files.txt
+javac -d bin -cp "lib/*" @files.txt
+java -cp "bin:lib/*" Main
+```
+
+````
+
 **Note for Windows users**: Use semicolon (`;`) instead of colon (`:`) in classpath:
+
 ```bash
 javac -d bin -cp "lib/*" src/shared/*.java src/tcp/*.java src/Main.java
 java -cp "bin;lib/*" Main
-```
+````
 
 ### Expected Output
 
@@ -64,7 +95,33 @@ Press Ctrl+C to stop
 
 ---
 
-## 📁 Project Structure
+## �️ Quick build helper
+
+For easier compiling of the backend locally, a small PowerShell helper script is included:
+
+```powershell
+# From the repository root or anywhere, run:
+# (runs the script located at backend/compile.ps1)
+powershell -ExecutionPolicy Bypass -File backend\compile.ps1
+```
+
+Notes:
+
+- The script generates a temporary `backend/files.txt` argfile and compiles sources into `backend/bin` using `backend/lib/gson-2.10.1.jar`.
+- Windows users can run the script directly in PowerShell. Unix users can still use the `javac` commands shown above.
+
+### VS Code (Java) troubleshooting
+
+If the editor reports unresolved imports for Gson even though `backend/lib/gson-2.10.1.jar` exists, reload the Java language server:
+
+1. Ctrl+Shift+P → "Java: Clean the Java language server workspace"
+2. Ctrl+Shift+P → "Developer: Reload Window"
+
+Alternatively, open the `backend` folder directly in VS Code so `backend/.vscode/settings.json` is applied.
+
+---
+
+## �📁 Project Structure
 
 ```
 backend/
@@ -107,7 +164,9 @@ backend/
 ### Shared Components
 
 #### `Task.java`
+
 Task data model with the following fields:
+
 - `id` (String) - Unique identifier (auto-generated)
 - `title` (String) - Task title
 - `assignee` (String) - Person assigned to the task
@@ -118,7 +177,9 @@ Task data model with the following fields:
 - `updatedAt` (String) - Last update timestamp
 
 #### `DataStore.java`
+
 Thread-safe in-memory storage using `ConcurrentHashMap`:
+
 - `addTask(Task)` - Add new task
 - `getTask(String id)` - Retrieve task by ID
 - `getAllTasks()` - Get all tasks as list
@@ -127,7 +188,9 @@ Thread-safe in-memory storage using `ConcurrentHashMap`:
 - `addNotification(String)` - Store notification for UDP broadcasting
 
 #### `JsonUtils.java`
+
 JSON serialization utilities using Gson:
+
 - `toJson(Object)` - Convert object to JSON string
 - `fromJson(String, Class)` - Parse JSON to object
 - `parseJson(String)` - Parse to JsonObject
@@ -143,6 +206,7 @@ JSON serialization utilities using Gson:
 **Purpose**: Handle CRUD operations for tasks using TCP sockets.
 
 **Key Features**:
+
 - ServerSocket listening on port 8080
 - JSON-based request/response protocol
 - Connection timeout management (5 seconds)
@@ -152,6 +216,7 @@ JSON serialization utilities using Gson:
 **Supported Actions**:
 
 1. **CREATE_TASK**
+
    ```json
    Request:
    {
@@ -163,7 +228,7 @@ JSON serialization utilities using Gson:
        "priority": "high"
      }
    }
-   
+
    Response:
    {
      "status": "success",
@@ -175,12 +240,13 @@ JSON serialization utilities using Gson:
    ```
 
 2. **GET_TASKS**
+
    ```json
    Request:
    {
      "action": "GET_TASKS"
    }
-   
+
    Response:
    {
      "status": "success",
@@ -197,6 +263,7 @@ JSON serialization utilities using Gson:
    ```
 
 3. **UPDATE_TASK**
+
    ```json
    Request:
    {
@@ -206,7 +273,7 @@ JSON serialization utilities using Gson:
        "status": "completed"
      }
    }
-   
+
    Response:
    {
      "status": "success",
@@ -215,6 +282,7 @@ JSON serialization utilities using Gson:
    ```
 
 4. **DELETE_TASK**
+
    ```json
    Request:
    {
@@ -223,7 +291,7 @@ JSON serialization utilities using Gson:
        "taskId": "task_123"
      }
    }
-   
+
    Response:
    {
      "status": "success",
@@ -240,17 +308,20 @@ JSON serialization utilities using Gson:
 **Purpose**: Broadcast real-time notifications to all connected clients.
 
 **Key Features**:
+
 - DatagramSocket for connectionless communication
 - Broadcasts task creation, update, and deletion events
 - Maintains list of subscribed client addresses
 - Background thread monitoring DataStore for changes
 
 **Notification Format**:
+
 ```
 NOTIFICATION_TYPE|TASK_ID|MESSAGE|TIMESTAMP
 ```
 
 **Examples**:
+
 ```
 TASK_CREATED|task_123|New task assigned to Member 5|1729350000000
 TASK_UPDATED|task_123|Task status changed to completed|1729350001000
@@ -266,6 +337,7 @@ TASK_DELETED|task_456|Task deleted|1729350002000
 **Purpose**: Handle file uploads and downloads using non-blocking I/O.
 
 **Key Features**:
+
 - ServerSocketChannel for accepting connections
 - Selector for multiplexing multiple channels
 - ByteBuffer operations (flip, clear, compact, rewind)
@@ -273,6 +345,7 @@ TASK_DELETED|task_456|Task deleted|1729350002000
 - Support for concurrent file transfers
 
 **Operations**:
+
 - File upload with progress tracking
 - File download by file ID
 - Maximum file size: 50MB
@@ -287,6 +360,7 @@ TASK_DELETED|task_456|Task deleted|1729350002000
 **Purpose**: Integrate with external REST APIs using URL/URLConnection.
 
 **Key Features**:
+
 - URL class for parsing and validation
 - URLConnection for HTTP requests
 - Integration with public APIs
@@ -295,6 +369,7 @@ TASK_DELETED|task_456|Task deleted|1729350002000
 **Endpoints**:
 
 1. **Get Motivational Quote**
+
    - Fetches from: `https://api.quotable.io/random`
    - Returns: `{ "quote": "...", "author": "..." }`
 
@@ -311,11 +386,13 @@ TASK_DELETED|task_456|Task deleted|1729350002000
 **Purpose**: Manage thread pool for concurrent request handling.
 
 **Key Features**:
+
 - FixedThreadPool with 50 threads
 - Singleton pattern for global access
 - Graceful shutdown handling
 
 **Usage**:
+
 ```java
 ExecutorService pool = ThreadPoolManager.getThreadPool();
 pool.submit(() -> handleClient(socket));
@@ -326,18 +403,21 @@ pool.submit(() -> handleClient(socket));
 **Purpose**: Centralized exception handling and logging.
 
 **Key Features**:
+
 - Formatted error messages with timestamps
 - Specific handling for network exceptions
 - Stack trace logging
 - Context-aware error reporting
 
 **Handled Exceptions**:
+
 - `IOException` - General I/O errors
 - `SocketException` - Socket connection errors
 - `SocketTimeoutException` - Connection timeouts
 - `UnknownHostException` - Host resolution failures
 
 **Usage**:
+
 ```java
 try {
     // Network operation
@@ -353,16 +433,22 @@ try {
 ### Testing TCP Server
 
 #### Using telnet:
+
 ```bash
 telnet localhost 8080
 ```
 
 Then type JSON request:
+
 ```json
-{"action":"CREATE_TASK","data":{"title":"Test Task","assignee":"John Doe","priority":"high"}}
+{
+  "action": "CREATE_TASK",
+  "data": { "title": "Test Task", "assignee": "John Doe", "priority": "high" }
+}
 ```
 
 #### Using curl:
+
 ```bash
 # Create task
 curl -X POST http://localhost:8080 -d '{"action":"CREATE_TASK","data":{"title":"Test Task","assignee":"John","priority":"high"}}'
@@ -380,6 +466,7 @@ curl -X POST http://localhost:8080 -d '{"action":"DELETE_TASK","data":{"taskId":
 ### Testing UDP Server
 
 Using netcat to listen for broadcasts:
+
 ```bash
 nc -u -l 9091
 ```
@@ -389,6 +476,7 @@ nc -u -l 9091
 ### Testing NIO Server
 
 Upload a file:
+
 ```bash
 curl -X POST -F "file=@test.pdf" -F "taskId=task_123" http://localhost:8081/upload
 ```
@@ -408,31 +496,37 @@ curl http://localhost:8082/api/avatar/test@example.com
 ## 🔍 Key Java Concepts Demonstrated
 
 ### 1. TCP/IP Socket Programming
+
 - **Classes**: `Socket`, `ServerSocket`, `BufferedReader`, `PrintWriter`
 - **Concepts**: Connection establishment, three-way handshake, reliable data transfer
 - **Location**: `tcp/TCPTaskServer.java`
 
 ### 2. UDP Protocol
+
 - **Classes**: `DatagramSocket`, `DatagramPacket`, `InetAddress`
 - **Concepts**: Connectionless communication, broadcasting, packet handling
 - **Location**: `udp/UDPNotificationServer.java`
 
 ### 3. Java NIO
+
 - **Classes**: `ServerSocketChannel`, `SocketChannel`, `Selector`, `ByteBuffer`, `FileChannel`
 - **Concepts**: Non-blocking I/O, channel multiplexing, buffer operations
 - **Location**: `nio/NIOFileServer.java`
 
 ### 4. URL/URI Handling
+
 - **Classes**: `URL`, `URI`, `URLConnection`, `HttpURLConnection`
 - **Concepts**: HTTP requests, URL parsing, external API integration
 - **Location**: `url/URLIntegrationService.java`
 
 ### 5. Multithreading
+
 - **Classes**: `ExecutorService`, `Executors`, `Thread`, `Runnable`
 - **Concepts**: Thread pools, concurrent execution, synchronization
 - **Location**: `threading/ThreadPoolManager.java`
 
 ### 6. Thread Safety
+
 - **Classes**: `ConcurrentHashMap`, `Collections.synchronizedList()`, `synchronized` keyword
 - **Concepts**: Race conditions, deadlock prevention, atomic operations
 - **Location**: `shared/DataStore.java`
@@ -466,6 +560,7 @@ javac -d bin -cp "lib/*" src/**/*.java src/*.java
 ### ClassNotFoundException
 
 Make sure Gson library is in the `lib/` directory and included in classpath:
+
 ```bash
 java -cp "bin:lib/*" Main
 ```
@@ -480,6 +575,7 @@ java -cp "bin:lib/*" Main
 ### Thread Pool Not Working
 
 Ensure Member 4's `ThreadPoolManager` is initialized before use:
+
 ```java
 ExecutorService pool = ThreadPoolManager.getThreadPool();
 ```

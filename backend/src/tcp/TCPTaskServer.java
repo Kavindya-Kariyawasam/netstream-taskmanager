@@ -1,5 +1,295 @@
 package tcp;
 
+import com.google.gson.JsonObject;
+import shared.DataStore;
+import shared.JsonUtils;
+import shared.Task;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.List;
+
 public class TCPTaskServer {
-    
+    private final int port;
+    private ServerSocket serverSocket;
+    private volatile boolean running = false;
+
+    public TCPTaskServer(int port) {
+        this.port = port;
+    }
+
+    public void start() {
+        try {
+            serverSocket = new ServerSocket(port);
+            serverSocket.setSoTimeout(1000); // 1 second timeout for accept()
+            running = true;
+            System.out.println("[INFO] TCP Server started on port " + port);
+            System.out.println("[INFO] Listening for client connections...");
+
+            while (running) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("[INFO] Client connected: " + clientSocket.getInetAddress());
+                    
+                    // Currently handling in the same thread
+                    // Later, ThreadPool will be implemented
+                    handleClient(clientSocket);
+                    
+                } catch (SocketTimeoutException e) {
+                    // Timeout is normal, allows checking 'running' flag
+                    continue;
+                }
+            }
+
+        } catch (IOException e) {
+            System.err.println("[ERROR] TCP Server error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            stop();
+        }
+    }
+
+    private void handleClient(Socket clientSocket) {
+        try (
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+        ) {
+            // Set read timeout
+            clientSocket.setSoTimeout(5000); // 5 seconds
+
+            // Read request
+            String request = in.readLine();
+            
+            if (request == null || request.trim().isEmpty()) {
+                out.println(JsonUtils.createErrorResponse("Empty request"));
+                return;
+            }
+
+            System.out.println("[DEBUG] Received: " + request);
+
+            // Process request and send response
+            String response = processRequest(request);
+            out.println(response);
+            System.out.println("[DEBUG] Sent: " + response);
+
+        } catch (SocketTimeoutException e) {
+            System.err.println("[WARN] Client timeout: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("[ERROR] Error handling client: " + e.getMessage());
+        } finally {
+            try {
+                clientSocket.close();
+                System.out.println("[INFO] Client disconnected");
+            } catch (IOException e) {
+                System.err.println("Error closing client socket: " + e.getMessage());
+            }
+        }
+    }
+
+    private String processRequest(String requestJson) {
+        try {
+            JsonObject request = JsonUtils.parseJson(requestJson);
+            
+            if (!request.has("action")) {
+                return JsonUtils.createErrorResponse("Missing 'action' field");
+            }
+
+            String action = request.get("action").getAsString();
+
+            switch (action) {
+                case "CREATE_TASK":
+                    return handleCreateTask(request);
+                
+                case "GET_TASKS":
+                    return handleGetTasks();
+                
+                case "GET_TASK":
+                    return handleGetTask(request);
+                
+                case "UPDATE_TASK":
+                    return handleUpdateTask(request);
+                
+                case "DELETE_TASK":
+                    return handleDeleteTask(request);
+                
+                default:
+                    return JsonUtils.createErrorResponse("Unknown action: " + action);
+            }
+
+        } catch (Exception e) {
+            return JsonUtils.createErrorResponse(e);
+        }
+    }
+
+    private String handleCreateTask(JsonObject request) {
+        try {
+            if (!request.has("data")) {
+                return JsonUtils.createErrorResponse("Missing 'data' field");
+            }
+
+            JsonObject data = request.getAsJsonObject("data");
+            
+            // Validate required fields
+            if (!data.has("title") || !data.has("assignee")) {
+                return JsonUtils.createErrorResponse("Missing required fields: title, assignee");
+            }
+
+            // Generate unique ID
+            String id = "task_" + System.currentTimeMillis();
+            String title = data.get("title").getAsString();
+            String assignee = data.get("assignee").getAsString();
+            String deadline = data.has("deadline") ? data.get("deadline").getAsString() : "";
+            String priority = data.has("priority") ? data.get("priority").getAsString() : "medium";
+
+            // Create and store task
+            Task task = new Task(id, title, assignee, deadline, priority);
+            DataStore.addTask(task);
+
+            // Return success response
+            JsonObject responseData = new JsonObject();
+            responseData.addProperty("taskId", id);
+            responseData.addProperty("message", "Task created successfully");
+            
+            return JsonUtils.createSuccessResponse(responseData);
+
+        } catch (Exception e) {
+            return JsonUtils.createErrorResponse(e);
+        }
+    }
+
+    private String handleGetTasks() {
+        try {
+            List<Task> tasks = DataStore.getAllTasks();
+            return JsonUtils.createSuccessResponse(tasks);
+        } catch (Exception e) {
+            return JsonUtils.createErrorResponse(e);
+        }
+    }
+
+    private String handleGetTask(JsonObject request) {
+        try {
+            if (!request.has("data")) {
+                return JsonUtils.createErrorResponse("Missing 'data' field");
+            }
+
+            JsonObject data = request.getAsJsonObject("data");
+            
+            if (!data.has("taskId")) {
+                return JsonUtils.createErrorResponse("Missing 'taskId' field");
+            }
+
+            String taskId = data.get("taskId").getAsString();
+            Task task = DataStore.getTask(taskId);
+
+            if (task == null) {
+                return JsonUtils.createErrorResponse("Task not found: " + taskId);
+            }
+
+            return JsonUtils.createSuccessResponse(task);
+
+        } catch (Exception e) {
+            return JsonUtils.createErrorResponse(e);
+        }
+    }
+
+    private String handleUpdateTask(JsonObject request) {
+        try {
+            if (!request.has("data")) {
+                return JsonUtils.createErrorResponse("Missing 'data' field");
+            }
+
+            JsonObject data = request.getAsJsonObject("data");
+            
+            if (!data.has("taskId")) {
+                return JsonUtils.createErrorResponse("Missing 'taskId' field");
+            }
+
+            String taskId = data.get("taskId").getAsString();
+            Task task = DataStore.getTask(taskId);
+
+            if (task == null) {
+                return JsonUtils.createErrorResponse("Task not found: " + taskId);
+            }
+
+            // Update fields if provided
+            if (data.has("title")) {
+                task.setTitle(data.get("title").getAsString());
+            }
+            if (data.has("assignee")) {
+                task.setAssignee(data.get("assignee").getAsString());
+            }
+            if (data.has("status")) {
+                task.setStatus(data.get("status").getAsString());
+            }
+            if (data.has("deadline")) {
+                task.setDeadline(data.get("deadline").getAsString());
+            }
+            if (data.has("priority")) {
+                task.setPriority(data.get("priority").getAsString());
+            }
+
+            DataStore.updateTask(taskId, task);
+
+            return JsonUtils.createSuccessResponse("Task updated successfully");
+
+        } catch (Exception e) {
+            return JsonUtils.createErrorResponse(e);
+        }
+    }
+
+    private String handleDeleteTask(JsonObject request) {
+        try {
+            if (!request.has("data")) {
+                return JsonUtils.createErrorResponse("Missing 'data' field");
+            }
+
+            JsonObject data = request.getAsJsonObject("data");
+            
+            if (!data.has("taskId")) {
+                return JsonUtils.createErrorResponse("Missing 'taskId' field");
+            }
+
+            String taskId = data.get("taskId").getAsString();
+            boolean deleted = DataStore.deleteTask(taskId);
+
+            if (!deleted) {
+                return JsonUtils.createErrorResponse("Task not found: " + taskId);
+            }
+
+            return JsonUtils.createSuccessResponse("Task deleted successfully");
+
+        } catch (Exception e) {
+            return JsonUtils.createErrorResponse(e);
+        }
+    }
+
+    public void stop() {
+        running = false;
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+                System.out.println("[INFO] TCP Server stopped");
+            }
+        } catch (IOException e) {
+            System.err.println("Error stopping server: " + e.getMessage());
+        }
+    }
+
+    // For testing
+    public static void main(String[] args) {
+        TCPTaskServer server = new TCPTaskServer(8080);
+        
+        // Add shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("\n[INFO] Shutting down server...");
+            server.stop();
+        }));
+        
+        server.start();
+    }
 }

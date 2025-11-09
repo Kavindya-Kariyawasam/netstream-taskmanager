@@ -20,6 +20,7 @@ NetStream TaskManager is a full-stack web application that showcases the impleme
 ### 🎯 Project Objectives
 
 This educational project demonstrates:
+
 - **TCP/IP Socket Programming**: Reliable client-server communication for CRUD operations
 - **UDP Protocol**: Low-latency real-time notifications and broadcasting
 - **Java NIO**: Non-blocking I/O for efficient file transfer operations
@@ -31,25 +32,30 @@ This educational project demonstrates:
 ## ✨ Features
 
 ### Core Functionality
+
 - ✅ **Task Management** (TCP-based)
+
   - Create, read, update, and delete tasks
   - Assign tasks to team members
   - Track task status and deadlines
   - Persistent in-memory data storage
 
 - 📢 **Real-Time Notifications** (UDP-based)
+
   - Instant task creation alerts
   - Status change notifications
   - Assignment notifications
   - Broadcast to all connected clients
 
 - 📁 **File Operations** (NIO-based)
+
   - Upload task attachments (images, PDFs, documents)
   - Download task-related files
   - Non-blocking file transfers
   - Support for large files (up to 50MB)
 
 - 🌐 **External Integrations** (URL/URI-based)
+
   - Fetch motivational quotes for dashboard
   - Integrate public REST APIs
   - Gravatar profile pictures
@@ -107,8 +113,9 @@ This educational project demonstrates:
 ### Technology Stack
 
 #### Backend
+
 - **Language**: Java 17+
-- **Core APIs**: 
+- **Core APIs**:
   - `java.net.Socket` / `ServerSocket` (TCP)
   - `java.net.DatagramSocket` / `DatagramPacket` (UDP)
   - `java.nio.channels.*` (NIO)
@@ -117,6 +124,7 @@ This educational project demonstrates:
 - **Libraries**: Gson 2.10.1 (JSON parsing)
 
 #### Frontend
+
 - **Framework**: React 18.2+
 - **Language**: TypeScript 5+
 - **Styling**: Tailwind CSS 3.4+
@@ -165,7 +173,17 @@ java -cp "bin:lib/*" Main
 # 🎉 All servers ready!
 ```
 
+Helper script to compile the backend on Windows:
+
+```powershell
+# From repo root
+powershell -ExecutionPolicy Bypass -File backend\compile.ps1
+```
+
+This script generates a temporary `backend/files.txt` and compiles all Java sources into `backend/bin` using the JARs in `backend/lib`.
+
 **Note for Windows users**: Replace `:` with `;` in classpath:
+
 ```bash
 java -cp "bin;lib/*" Main
 ```
@@ -188,6 +206,7 @@ npm run dev
 ### Verification
 
 1. **Backend Health Check**:
+
 ```bash
 # Test TCP Server
 telnet localhost 8080
@@ -209,6 +228,7 @@ curl -X POST http://localhost:8080 -d '{"action":"LIST"}'
 ### TCP Server API (Port 8080)
 
 #### Create Task
+
 ```json
 REQUEST:
 {
@@ -232,6 +252,7 @@ RESPONSE:
 ```
 
 #### Get All Tasks
+
 ```json
 REQUEST:
 {
@@ -255,6 +276,7 @@ RESPONSE:
 ```
 
 #### Update Task
+
 ```json
 REQUEST:
 {
@@ -273,6 +295,7 @@ RESPONSE:
 ```
 
 #### Delete Task
+
 ```json
 REQUEST:
 {
@@ -292,11 +315,13 @@ RESPONSE:
 ### UDP Server (Port 9090)
 
 **Broadcasting Format**:
+
 ```
 NOTIFICATION_TYPE|TASK_ID|MESSAGE|TIMESTAMP
 ```
 
 **Examples**:
+
 ```
 TASK_CREATED|task_123|New task assigned to Member 5|1729350000000
 TASK_UPDATED|task_123|Task status changed to completed|1729350001000
@@ -306,6 +331,7 @@ TASK_ASSIGNED|task_456|You have been assigned a new task|1729350002000
 ### NIO File Server (Port 8081)
 
 #### Upload File
+
 ```
 POST /upload
 Content-Type: multipart/form-data
@@ -319,6 +345,7 @@ Response: File ID
 ```
 
 #### Download File
+
 ```
 GET /download/{fileId}
 
@@ -328,6 +355,7 @@ Response: Binary file data with appropriate Content-Type
 ### URL Integration Service (Port 8082)
 
 #### Get Motivational Quote
+
 ```
 GET /api/quote
 
@@ -339,6 +367,7 @@ Response:
 ```
 
 #### Get User Avatar
+
 ```
 GET /api/avatar/{email}
 
@@ -475,36 +504,42 @@ netstream-taskmanager/
 ## 🎓 Learning Outcomes
 
 ### 1. TCP/IP Socket Programming
+
 - Creating server and client sockets
 - Handling multiple client connections
 - Implementing request-response protocols
 - Managing connection lifecycle
 
 ### 2. UDP Protocol
+
 - Connectionless communication
 - Broadcasting messages
 - Handling packet loss
 - Real-time data transmission
 
 ### 3. Java NIO (Non-blocking I/O)
+
 - Channel and Buffer concepts
 - Selector for multiplexing
 - Non-blocking file operations
 - Efficient memory management
 
 ### 4. Multithreading & Concurrency
+
 - Thread pool management
 - Synchronization mechanisms
 - Handling race conditions
 - Concurrent collections
 
 ### 5. URL/URI Handling
+
 - Making HTTP requests
 - Parsing URLs
 - Integrating external APIs
 - Exception handling
 
 ### 6. Full-Stack Development
+
 - Backend-frontend integration
 - REST API design
 - Real-time communication
@@ -515,13 +550,15 @@ netstream-taskmanager/
 ## 🛠️ Development Guidelines
 
 ### Code Standards
+
 - Follow Java naming conventions (camelCase for methods, PascalCase for classes)
 - Meaningful comments
-- Appropriate exceptions handling 
+- Appropriate exceptions handling
 - Meaningful variable names
 - Small and focused methods
 
 ### Git Workflow
+
 ```bash
 # Create feature branch
 git checkout -b feature/feature-server
@@ -537,6 +574,7 @@ git push origin feature/feature-server
 ```
 
 ### Commit Message Format
+
 ```
 <type>: <description>
 
@@ -555,6 +593,7 @@ Types:
 ### Common Issues
 
 #### Port Already in Use
+
 ```bash
 # Find process using port 8080
 lsof -i :8080
@@ -564,6 +603,7 @@ kill -9 <PID>
 ```
 
 #### Java Compilation Errors
+
 ```bash
 # Clean and recompile
 rm -rf backend/bin/*
@@ -571,6 +611,7 @@ javac -d backend/bin -cp "backend/lib/*" backend/src/**/*.java backend/src/*.jav
 ```
 
 #### Frontend Build Issues
+
 ```bash
 # Clear cache and reinstall
 cd frontend
@@ -579,6 +620,7 @@ npm install
 ```
 
 #### Connection Refused
+
 - Ensure all backend servers are running
 - Check firewall settings
 - Verify correct ports are used
@@ -625,4 +667,5 @@ npm install
 **Built with ❤️ by the NetStream Team**
 
 ⭐ Star this repository if you found it helpful!
+
 </div>
