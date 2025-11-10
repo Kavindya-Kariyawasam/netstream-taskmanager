@@ -1,3 +1,46 @@
+import { Bell } from "lucide-react";
+import { useState, useEffect } from "react";
+import TaskList from "./components/TaskList";
+import Notifications from "./components/Notifications";
+import ToastContainer from "./components/Toast";
+import type { ToastMessage } from "./components/Toast";
+import { tcpService } from "./services/tcpService";
+
+function App() {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Subscribe to real-time notifications via SSE
+  useEffect(() => {
+    const eventSource = tcpService.subscribeToNotifications(
+      (notif) => {
+        // Show toast notification
+        const toast: ToastMessage = {
+          id: notif.id,
+          title: notif.title,
+          body: notif.body,
+          type: "info",
+          duration: 5000, // auto-dismiss after 5 seconds
+        };
+        setToasts((prev) => [...prev, toast]);
+
+        // Debug log to see what we're receiving
+        console.log("Received SSE notification:", notif);
+      },
+      (err) => {
+        console.error("SSE error:", err);
+      }
+    );
+
+    // Cleanup on unmount
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 import { useState } from "react";
 import { Bell, Globe, ListTodo } from "lucide-react";
 import TaskList from "./components/TaskList";
@@ -20,6 +63,16 @@ function App() {
                 Network Programming Project - Java Backend Services
               </p>
             </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications((s) => !s)}
+                className="relative p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+              >
+                <Bell className="w-6 h-6" />
+                <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+              </button>
+
+              <Notifications visible={showNotifications} onClose={() => setShowNotifications(false)} />
             <div className="flex items-center gap-4">
               {/* Tab Navigation */}
               <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
@@ -75,6 +128,9 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

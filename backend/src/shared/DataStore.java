@@ -54,6 +54,8 @@ public class DataStore {
         if (notifications.size() > 100) {
             notifications.remove(0);
         }
+        // Note: Broadcasting is handled by UDPNotificationServer.broadcast()
+        // which forwards to both UDP clients AND HTTP clients via NotificationBroadcaster
     }
 
     public static List<String> getNotifications() {
