@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Sparkles,
   User,
@@ -11,11 +11,11 @@ import {
   Globe,
   Loader2,
   Copy,
-  Check
-} from 'lucide-react';
+  Check,
+} from "lucide-react";
 
 interface ApiResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data?: any;
   message?: string;
 }
@@ -24,93 +24,123 @@ const URLServiceDemo: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, any>>({});
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
 
   // Input states
-  const [email, setEmail] = useState('demo@example.com');
-  const [urlToValidate, setUrlToValidate] = useState('https://www.google.com');
-  const [urlToParse, setUrlToParse] = useState('https://example.com:8080/path?param1=value1#section');
-  const [city, setCity] = useState('London');
-  const [downloadUrl, setDownloadUrl] = useState('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
-  const [apiUrl, setApiUrl] = useState('https://jsonplaceholder.typicode.com/todos/1');
+  const [email, setEmail] = useState("demo@example.com");
+  const [urlToValidate, setUrlToValidate] = useState("https://www.google.com");
+  const [urlToParse, setUrlToParse] = useState(
+    "https://example.com:8080/path?param1=value1#section"
+  );
+  const [city, setCity] = useState("London");
+  const [downloadUrl, setDownloadUrl] = useState(
+    "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+  );
+  const [apiUrl, setApiUrl] = useState(
+    "https://jsonplaceholder.typicode.com/todos/1"
+  );
 
-  const sendRequest = async (action: string, data?: any): Promise<ApiResponse> => {
+  const sendRequest = async (
+    action: string,
+    data?: any
+  ): Promise<ApiResponse> => {
     try {
-      const response = await fetch('http://localhost:3000/url-service', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/url-service", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ action, data }),
       });
       return await response.json();
     } catch (error) {
       return {
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Network error'
+        status: "error",
+        message: error instanceof Error ? error.message : "Network error",
       };
     }
   };
 
+  // Quick health ping to the URL service via gateway
+  const pingUrlService = async () => {
+    try {
+      const resp = await fetch("http://localhost:3000/url-service", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "PING" }),
+      });
+      setConnected(resp.ok);
+    } catch (e) {
+      setConnected(false);
+    }
+  };
+
+  React.useEffect(() => {
+    pingUrlService();
+    const iv = setInterval(pingUrlService, 10000);
+    return () => clearInterval(iv);
+  }, []);
+
   const handleGetQuote = async () => {
-    setLoading('quote');
-    const result = await sendRequest('GET_QUOTE');
+    setLoading("quote");
+    const result = await sendRequest("GET_QUOTE");
     setResults({ ...results, quote: result });
     setLoading(null);
   };
 
   const handleGetAvatar = async () => {
-    setLoading('avatar');
-    const result = await sendRequest('GET_AVATAR', { email });
+    setLoading("avatar");
+    const result = await sendRequest("GET_AVATAR", { email });
     setResults({ ...results, avatar: result });
     setLoading(null);
   };
 
   const handleValidateUrl = async () => {
-    setLoading('validate');
-    const result = await sendRequest('VALIDATE_URL', { url: urlToValidate });
+    setLoading("validate");
+    const result = await sendRequest("VALIDATE_URL", { url: urlToValidate });
     setResults({ ...results, validate: result });
     setLoading(null);
   };
 
   const handleParseUrl = async () => {
-    setLoading('parse');
-    const result = await sendRequest('PARSE_URL', { url: urlToParse });
+    setLoading("parse");
+    const result = await sendRequest("PARSE_URL", { url: urlToParse });
     setResults({ ...results, parse: result });
     setLoading(null);
   };
 
   const handleGetWeather = async () => {
-    setLoading('weather');
-    const result = await sendRequest('GET_WEATHER', { city });
+    setLoading("weather");
+    const result = await sendRequest("GET_WEATHER", { city });
     setResults({ ...results, weather: result });
     setLoading(null);
   };
 
   const handleDownloadFile = async () => {
-    setLoading('download');
-    const result = await sendRequest('DOWNLOAD_FILE', { 
+    setLoading("download");
+    const result = await sendRequest("DOWNLOAD_FILE", {
       url: downloadUrl,
-      fileName: 'downloaded_file.pdf'
+      fileName: "downloaded_file.pdf",
     });
     setResults({ ...results, download: result });
     setLoading(null);
   };
 
   const handleUploadFile = async () => {
-    setLoading('upload');
-    const result = await sendRequest('UPLOAD_FILE', {
-      fileData: 'Sample file content from frontend demo',
-      fileName: 'frontend_upload.txt'
+    setLoading("upload");
+    const result = await sendRequest("UPLOAD_FILE", {
+      fileData: "Sample file content from frontend demo",
+      fileName: "frontend_upload.txt",
     });
     setResults({ ...results, upload: result });
     setLoading(null);
   };
 
   const handleFetchApi = async () => {
-    setLoading('api');
-    const result = await sendRequest('FETCH_API', {
+    setLoading("api");
+    const result = await sendRequest("FETCH_API", {
       url: apiUrl,
-      method: 'GET'
+      method: "GET",
     });
     setResults({ ...results, api: result });
     setLoading(null);
@@ -133,15 +163,22 @@ const URLServiceDemo: React.FC = () => {
           <p className="text-lg text-slate-600">
             Member 3 - URLs/URIs & URLConnection
           </p>
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Connected to URL Service (Port 8082)</span>
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+            <div
+              className={`h-2 w-2 rounded-full ${
+                connected ? "bg-green-500 animate-pulse" : "bg-red-400"
+              }`}
+            ></div>
+            <span className={connected ? "text-slate-500" : "text-rose-500"}>
+              {connected
+                ? "Connected to URL Service (via gateway)"
+                : "URL Service not reachable"}
+            </span>
           </div>
         </div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
           {/* 1. GET_QUOTE */}
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200 hover:shadow-2xl transition-shadow">
             <div className="flex items-center gap-3 mb-4">
@@ -149,29 +186,33 @@ const URLServiceDemo: React.FC = () => {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Motivational Quote</h3>
-                <p className="text-sm text-slate-500">Fetch from ZenQuotes API</p>
+                <h3 className="text-xl font-bold text-slate-800">
+                  Motivational Quote
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Fetch from ZenQuotes API
+                </p>
               </div>
             </div>
 
             <button
               onClick={handleGetQuote}
-              disabled={loading === 'quote'}
+              disabled={loading === "quote"}
               className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'quote' ? (
+              {loading === "quote" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Fetching...
                 </>
               ) : (
-                'Get Quote'
+                "Get Quote"
               )}
             </button>
 
             {results.quote && (
               <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-                {results.quote.status === 'success' ? (
+                {results.quote.status === "success" ? (
                   <>
                     <p className="text-slate-700 italic text-lg mb-2">
                       "{results.quote.data.quote}"
@@ -184,7 +225,9 @@ const URLServiceDemo: React.FC = () => {
                     </p>
                   </>
                 ) : (
-                  <p className="text-red-600 text-sm">{results.quote.message}</p>
+                  <p className="text-red-600 text-sm">
+                    {results.quote.message}
+                  </p>
                 )}
               </div>
             )}
@@ -197,7 +240,9 @@ const URLServiceDemo: React.FC = () => {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Gravatar Avatar</h3>
+                <h3 className="text-xl font-bold text-slate-800">
+                  Gravatar Avatar
+                </h3>
                 <p className="text-sm text-slate-500">Generate avatar URL</p>
               </div>
             </div>
@@ -212,20 +257,20 @@ const URLServiceDemo: React.FC = () => {
 
             <button
               onClick={handleGetAvatar}
-              disabled={loading === 'avatar'}
+              disabled={loading === "avatar"}
               className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'avatar' ? (
+              {loading === "avatar" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Generating...
                 </>
               ) : (
-                'Generate Avatar URL'
+                "Generate Avatar URL"
               )}
             </button>
 
-            {results.avatar && results.avatar.status === 'success' && (
+            {results.avatar && results.avatar.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                 <div className="flex items-center gap-4">
                   <img
@@ -240,10 +285,15 @@ const URLServiceDemo: React.FC = () => {
                         {results.avatar.data.avatarUrl.substring(0, 50)}...
                       </p>
                       <button
-                        onClick={() => copyToClipboard(results.avatar.data.avatarUrl, 'avatar')}
+                        onClick={() =>
+                          copyToClipboard(
+                            results.avatar.data.avatarUrl,
+                            "avatar"
+                          )
+                        }
                         className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
                       >
-                        {copiedUrl === 'avatar' ? (
+                        {copiedUrl === "avatar" ? (
                           <Check className="w-4 h-4 text-green-600" />
                         ) : (
                           <Copy className="w-4 h-4 text-slate-600" />
@@ -263,8 +313,12 @@ const URLServiceDemo: React.FC = () => {
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">URL Validator</h3>
-                <p className="text-sm text-slate-500">Check URL validity & accessibility</p>
+                <h3 className="text-xl font-bold text-slate-800">
+                  URL Validator
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Check URL validity & accessibility
+                </p>
               </div>
             </div>
 
@@ -278,20 +332,20 @@ const URLServiceDemo: React.FC = () => {
 
             <button
               onClick={handleValidateUrl}
-              disabled={loading === 'validate'}
+              disabled={loading === "validate"}
               className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'validate' ? (
+              {loading === "validate" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Validating...
                 </>
               ) : (
-                'Validate URL'
+                "Validate URL"
               )}
             </button>
 
-            {results.validate && results.validate.status === 'success' && (
+            {results.validate && results.validate.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
@@ -301,7 +355,7 @@ const URLServiceDemo: React.FC = () => {
                       <XCircle className="w-4 h-4 text-red-600" />
                     )}
                     <span className="font-medium">
-                      Valid: {results.validate.data.valid ? 'Yes' : 'No'}
+                      Valid: {results.validate.data.valid ? "Yes" : "No"}
                     </span>
                   </div>
                   {results.validate.data.valid && (
@@ -313,13 +367,14 @@ const URLServiceDemo: React.FC = () => {
                           <XCircle className="w-4 h-4 text-red-600" />
                         )}
                         <span className="font-medium">
-                          Accessible: {results.validate.data.accessible ? 'Yes' : 'No'}
+                          Accessible:{" "}
+                          {results.validate.data.accessible ? "Yes" : "No"}
                         </span>
                       </div>
                       <p className="text-slate-600">
-                        Protocol: {results.validate.data.protocol} | 
-                        Host: {results.validate.data.host} | 
-                        Status: {results.validate.data.httpStatus}
+                        Protocol: {results.validate.data.protocol} | Host:{" "}
+                        {results.validate.data.host} | Status:{" "}
+                        {results.validate.data.httpStatus}
                       </p>
                     </>
                   )}
@@ -350,38 +405,64 @@ const URLServiceDemo: React.FC = () => {
 
             <button
               onClick={handleParseUrl}
-              disabled={loading === 'parse'}
+              disabled={loading === "parse"}
               className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'parse' ? (
+              {loading === "parse" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Parsing...
                 </>
               ) : (
-                'Parse URL'
+                "Parse URL"
               )}
             </button>
 
-            {results.parse && results.parse.status === 'success' && (
+            {results.parse && results.parse.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 max-h-64 overflow-y-auto">
                 <div className="space-y-1 text-xs font-mono">
-                  <p><span className="font-bold text-purple-700">Protocol:</span> {results.parse.data.protocol}</p>
-                  <p><span className="font-bold text-purple-700">Host:</span> {results.parse.data.host}</p>
-                  <p><span className="font-bold text-purple-700">Port:</span> {results.parse.data.port}</p>
-                  <p><span className="font-bold text-purple-700">Path:</span> {results.parse.data.path}</p>
+                  <p>
+                    <span className="font-bold text-purple-700">Protocol:</span>{" "}
+                    {results.parse.data.protocol}
+                  </p>
+                  <p>
+                    <span className="font-bold text-purple-700">Host:</span>{" "}
+                    {results.parse.data.host}
+                  </p>
+                  <p>
+                    <span className="font-bold text-purple-700">Port:</span>{" "}
+                    {results.parse.data.port}
+                  </p>
+                  <p>
+                    <span className="font-bold text-purple-700">Path:</span>{" "}
+                    {results.parse.data.path}
+                  </p>
                   {results.parse.data.query && (
-                    <p><span className="font-bold text-purple-700">Query:</span> {results.parse.data.query}</p>
+                    <p>
+                      <span className="font-bold text-purple-700">Query:</span>{" "}
+                      {results.parse.data.query}
+                    </p>
                   )}
                   {results.parse.data.ref && (
-                    <p><span className="font-bold text-purple-700">Fragment:</span> {results.parse.data.ref}</p>
+                    <p>
+                      <span className="font-bold text-purple-700">
+                        Fragment:
+                      </span>{" "}
+                      {results.parse.data.ref}
+                    </p>
                   )}
                   {results.parse.data.queryParams && (
                     <div className="mt-2">
-                      <p className="font-bold text-purple-700 mb-1">Query Parameters:</p>
-                      {Object.entries(results.parse.data.queryParams).map(([key, value]) => (
-                        <p key={key} className="ml-4">• {key}: {value as string}</p>
-                      ))}
+                      <p className="font-bold text-purple-700 mb-1">
+                        Query Parameters:
+                      </p>
+                      {Object.entries(results.parse.data.queryParams).map(
+                        ([key, value]) => (
+                          <p key={key} className="ml-4">
+                            • {key}: {value as string}
+                          </p>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
@@ -396,7 +477,9 @@ const URLServiceDemo: React.FC = () => {
                 <Cloud className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">Weather Info</h3>
+                <h3 className="text-xl font-bold text-slate-800">
+                  Weather Info
+                </h3>
                 <p className="text-sm text-slate-500">Get current weather</p>
               </div>
             </div>
@@ -411,41 +494,53 @@ const URLServiceDemo: React.FC = () => {
 
             <button
               onClick={handleGetWeather}
-              disabled={loading === 'weather'}
+              disabled={loading === "weather"}
               className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'weather' ? (
+              {loading === "weather" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Fetching...
                 </>
               ) : (
-                'Get Weather'
+                "Get Weather"
               )}
             </button>
 
-            {results.weather && results.weather.status === 'success' && (
+            {results.weather && results.weather.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200">
-                <h4 className="font-bold text-slate-800 mb-2">{results.weather.data.city}</h4>
+                <h4 className="font-bold text-slate-800 mb-2">
+                  {results.weather.data.city}
+                </h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-slate-500 text-xs">Temperature</p>
-                    <p className="font-bold text-lg text-slate-800">{results.weather.data.temperature}</p>
+                    <p className="font-bold text-lg text-slate-800">
+                      {results.weather.data.temperature}
+                    </p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs">Feels Like</p>
-                    <p className="font-bold text-lg text-slate-800">{results.weather.data.feelsLike}</p>
+                    <p className="font-bold text-lg text-slate-800">
+                      {results.weather.data.feelsLike}
+                    </p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs">Humidity</p>
-                    <p className="font-semibold text-slate-700">{results.weather.data.humidity}</p>
+                    <p className="font-semibold text-slate-700">
+                      {results.weather.data.humidity}
+                    </p>
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs">Wind Speed</p>
-                    <p className="font-semibold text-slate-700">{results.weather.data.windSpeed}</p>
+                    <p className="font-semibold text-slate-700">
+                      {results.weather.data.windSpeed}
+                    </p>
                   </div>
                 </div>
-                <p className="mt-2 text-slate-600 italic">{results.weather.data.description}</p>
+                <p className="mt-2 text-slate-600 italic">
+                  {results.weather.data.description}
+                </p>
               </div>
             )}
           </div>
@@ -457,7 +552,9 @@ const URLServiceDemo: React.FC = () => {
                 <Download className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">File Download</h3>
+                <h3 className="text-xl font-bold text-slate-800">
+                  File Download
+                </h3>
                 <p className="text-sm text-slate-500">Download from URL</p>
               </div>
             </div>
@@ -472,27 +569,37 @@ const URLServiceDemo: React.FC = () => {
 
             <button
               onClick={handleDownloadFile}
-              disabled={loading === 'download'}
+              disabled={loading === "download"}
               className="w-full py-3 px-4 bg-gradient-to-r from-teal-500 to-green-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'download' ? (
+              {loading === "download" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Downloading...
                 </>
               ) : (
-                'Download File'
+                "Download File"
               )}
             </button>
 
-            {results.download && results.download.status === 'success' && (
+            {results.download && results.download.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-teal-50 to-green-50 rounded-xl border border-teal-200">
                 <div className="space-y-2 text-sm">
-                  <p><span className="font-bold text-teal-700">File:</span> {results.download.data.fileName}</p>
-                  <p><span className="font-bold text-teal-700">Size:</span> {(results.download.data.fileSize / 1024).toFixed(2)} KB</p>
-                  <p><span className="font-bold text-teal-700">Type:</span> {results.download.data.contentType}</p>
+                  <p>
+                    <span className="font-bold text-teal-700">File:</span>{" "}
+                    {results.download.data.fileName}
+                  </p>
+                  <p>
+                    <span className="font-bold text-teal-700">Size:</span>{" "}
+                    {(results.download.data.fileSize / 1024).toFixed(2)} KB
+                  </p>
+                  <p>
+                    <span className="font-bold text-teal-700">Type:</span>{" "}
+                    {results.download.data.contentType}
+                  </p>
                   <p className="text-xs text-slate-600 break-all">
-                    <span className="font-bold text-teal-700">Path:</span> {results.download.data.filePath}
+                    <span className="font-bold text-teal-700">Path:</span>{" "}
+                    {results.download.data.filePath}
                   </p>
                 </div>
               </div>
@@ -506,35 +613,46 @@ const URLServiceDemo: React.FC = () => {
                 <Upload className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">File Upload</h3>
+                <h3 className="text-xl font-bold text-slate-800">
+                  File Upload
+                </h3>
                 <p className="text-sm text-slate-500">Upload to server</p>
               </div>
             </div>
 
             <button
               onClick={handleUploadFile}
-              disabled={loading === 'upload'}
+              disabled={loading === "upload"}
               className="w-full py-3 px-4 bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'upload' ? (
+              {loading === "upload" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Uploading...
                 </>
               ) : (
-                'Upload Sample File'
+                "Upload Sample File"
               )}
             </button>
 
-            {results.upload && results.upload.status === 'success' && (
+            {results.upload && results.upload.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-rose-50 to-red-50 rounded-xl border border-rose-200">
                 <div className="space-y-2 text-sm">
-                  <p><span className="font-bold text-rose-700">File:</span> {results.upload.data.fileName}</p>
-                  <p><span className="font-bold text-rose-700">Size:</span> {results.upload.data.fileSize} bytes</p>
-                  <p className="text-xs text-slate-600 break-all">
-                    <span className="font-bold text-rose-700">Path:</span> {results.upload.data.filePath}
+                  <p>
+                    <span className="font-bold text-rose-700">File:</span>{" "}
+                    {results.upload.data.fileName}
                   </p>
-                  <p className="text-xs text-green-600 font-medium">✓ Upload successful!</p>
+                  <p>
+                    <span className="font-bold text-rose-700">Size:</span>{" "}
+                    {results.upload.data.fileSize} bytes
+                  </p>
+                  <p className="text-xs text-slate-600 break-all">
+                    <span className="font-bold text-rose-700">Path:</span>{" "}
+                    {results.upload.data.filePath}
+                  </p>
+                  <p className="text-xs text-green-600 font-medium">
+                    ✓ Upload successful!
+                  </p>
                 </div>
               </div>
             )}
@@ -547,7 +665,9 @@ const URLServiceDemo: React.FC = () => {
                 <Globe className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-800">API Fetcher</h3>
+                <h3 className="text-xl font-bold text-slate-800">
+                  API Fetcher
+                </h3>
                 <p className="text-sm text-slate-500">Call any REST API</p>
               </div>
             </div>
@@ -562,32 +682,40 @@ const URLServiceDemo: React.FC = () => {
 
             <button
               onClick={handleFetchApi}
-              disabled={loading === 'api'}
+              disabled={loading === "api"}
               className="w-full py-3 px-4 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading === 'api' ? (
+              {loading === "api" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Fetching...
                 </>
               ) : (
-                'Fetch API'
+                "Fetch API"
               )}
             </button>
 
-            {results.api && results.api.status === 'success' && (
+            {results.api && results.api.status === "success" && (
               <div className="mt-4 p-4 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200 max-h-64 overflow-y-auto">
                 <div className="space-y-2 text-sm">
-                  <p><span className="font-bold text-violet-700">Status:</span> {results.api.data.statusCode}</p>
-                  <p><span className="font-bold text-violet-700">Response:</span></p>
+                  <p>
+                    <span className="font-bold text-violet-700">Status:</span>{" "}
+                    {results.api.data.statusCode}
+                  </p>
+                  <p>
+                    <span className="font-bold text-violet-700">Response:</span>
+                  </p>
                   <pre className="text-xs bg-white p-2 rounded border border-violet-200 overflow-x-auto">
-                    {JSON.stringify(JSON.parse(results.api.data.response), null, 2)}
+                    {JSON.stringify(
+                      JSON.parse(results.api.data.response),
+                      null,
+                      2
+                    )}
                   </pre>
                 </div>
               </div>
             )}
           </div>
-
         </div>
 
         {/* Info Footer */}

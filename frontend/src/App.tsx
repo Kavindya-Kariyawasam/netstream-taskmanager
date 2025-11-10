@@ -46,10 +46,25 @@ function App() {
 
       try {
         // Check URL service
-        const urlResp = await fetch("http://localhost:8082/health", {
-          method: "GET",
-        });
-        if (urlResp.ok) status.url = true;
+        // Use gateway to probe URL service (POST /url-service). Gateway will return JSON even if action unsupported.
+        try {
+          const probe = await fetch("http://localhost:3000/url-service", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "PING" }),
+          });
+          if (probe.ok) status.url = true;
+        } catch (e) {
+          // fallback: try direct port 8082 (in case gateway not used)
+          try {
+            const urlResp = await fetch("http://localhost:8082/", {
+              method: "GET",
+            });
+            if (urlResp.ok) status.url = true;
+          } catch (e2) {
+            // ignore
+          }
+        }
       } catch (e) {
         console.log("URL service not available");
       }
