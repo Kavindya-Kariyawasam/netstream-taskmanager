@@ -45,12 +45,14 @@ export default function TaskList() {
       if (response.status === "success") {
         await fetchTasks();
         setShowForm(false);
-        alert("Task created successfully!");
+        // alert("Task created successfully!");
       } else {
-        alert("Error: " + response.message);
+        // alert("Error: " + response.message);
+        console.error("Task creation failed:", response.message);
       }
     } catch (err: any) {
-      alert("Error: " + err.message);
+      // alert("Error: " + err.message);
+      console.error("Task creation error:", err.message);
     }
   };
 
@@ -64,12 +66,14 @@ export default function TaskList() {
         await fetchTasks();
         setShowForm(false);
         setEditingTask(null);
-        alert("Task updated successfully!");
+        // alert("Task updated successfully!");
       } else {
-        alert("Error: " + response.message);
+        // alert("Error: " + response.message);
+        console.error("Task update failed:", response.message);
       }
     } catch (err: any) {
-      alert("Error: " + err.message);
+      // alert("Error: " + err.message);
+      console.error("Task update error:", err.message);
     }
   };
 
@@ -81,12 +85,14 @@ export default function TaskList() {
 
       if (response.status === "success") {
         await fetchTasks();
-        alert("Task deleted successfully!");
+        // alert("Task deleted successfully!");
       } else {
-        alert("Error: " + response.message);
+        // alert("Error: " + response.message);
+        console.error("Task deletion failed:", response.message);
       }
     } catch (err: any) {
-      alert("Error: " + err.message);
+      // alert("Error: " + err.message);
+      console.error("Task deletion error:", err.message);
     }
   };
 
@@ -145,16 +151,15 @@ export default function TaskList() {
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 font-medium transition-colors ${
-                filterStatus === status
+              className={`px-4 py-2 font-medium transition-colors ${filterStatus === status
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               {status === "all"
                 ? "All"
                 : status.charAt(0).toUpperCase() +
-                  status.slice(1).replace("-", " ")}
+                status.slice(1).replace("-", " ")}
               <span className="ml-2 text-sm">
                 (
                 {status === "all"
