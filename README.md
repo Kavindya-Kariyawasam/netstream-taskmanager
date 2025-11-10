@@ -47,12 +47,16 @@ This educational project demonstrates:
   - Assignment notifications
   - Broadcast to all connected clients
 
+  Note: The frontend provides a notification center where users can view, delete, or mark notifications read; notifications are delivered via UDP broadcasts from the backend.
+
 - 📁 **File Operations** (NIO-based)
 
   - Upload task attachments (images, PDFs, documents)
   - Download task-related files
   - Non-blocking file transfers
   - Support for large files (up to 50MB)
+
+  Note: The NIO file service accepts multipart uploads and includes CORS headers so the frontend can upload files directly from the browser (drag & drop is supported in the UI).
 
 - 🌐 **External Integrations** (URL/URI-based)
 

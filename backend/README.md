@@ -328,6 +328,8 @@ TASK_UPDATED|task_123|Task status changed to completed|1729350001000
 TASK_DELETED|task_456|Task deleted|1729350002000
 ```
 
+Note: Notifications are stored in the shared DataStore and are broadcast via UDP. The frontend implements a simple notification inbox that allows users to dismiss or delete notifications locally.
+
 ---
 
 ### NIO Server (Port 8081)
@@ -350,6 +352,8 @@ TASK_DELETED|task_456|Task deleted|1729350002000
 - File download by file ID
 - Maximum file size: 50MB
 - Stored in `backend/uploads/` directory
+
+Note: The NIO server responds to browser multipart uploads and includes CORS headers so the frontend can upload files directly; uploaded files are persisted under `backend/uploads/`.
 
 ---
 
@@ -610,7 +614,7 @@ ExecutorService pool = ThreadPoolManager.getThreadPool();
 - **Gson 2.10.1**: JSON serialization/deserialization
   - Maven: `com.google.code.gson:gson:2.10.1`
   - Download: https://repo1.maven.org/maven2/com/google/code/gson/gson/2.10.1/gson-2.10.1.jar
-
+s
 ### Standard Libraries
 
 - `java.net.*` - Socket, ServerSocket, DatagramSocket, URL

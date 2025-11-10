@@ -10,6 +10,15 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  body?: string;
+  // backend may return ISO string or a numeric timestamp
+  createdAt: string | number;
+  read?: boolean;
+}
+
 export interface ApiResponse<T = any> {
   status: "success" | "error";
   data?: T;

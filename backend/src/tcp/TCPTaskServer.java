@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import shared.DataStore;
 import shared.JsonUtils;
 import shared.Task;
+import udp.UDPNotificationServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -150,6 +151,12 @@ public class TCPTaskServer {
             Task task = new Task(id, title, assignee, deadline, priority);
             DataStore.addTask(task);
 
+            // Broadcast with assignee name in the format:
+            // TASK_CREATED|task_123|Task 'title' assigned to John Doe
+            String notification = "TASK_CREATED|" + task.getId() + "|Task '" + task.getTitle() + "' assigned to " + task.getAssignee();
+            UDPNotificationServer.broadcast(notification);
+
+
             // Return success response
             JsonObject responseData = new JsonObject();
             responseData.addProperty("taskId", id);
@@ -235,6 +242,11 @@ public class TCPTaskServer {
 
             DataStore.updateTask(taskId, task);
 
+            // Broadcast with format: TASK_UPDATED|task_123|Task 'title' updated by Assignee Name
+            String notification = "TASK_UPDATED|" + taskId + "|Task '" + task.getTitle() + "' updated by " + task.getAssignee();
+            UDPNotificationServer.broadcast(notification);
+
+
             return JsonUtils.createSuccessResponse("Task updated successfully");
 
         } catch (Exception e) {
@@ -255,7 +267,16 @@ public class TCPTaskServer {
             }
 
             String taskId = data.get("taskId").getAsString();
+            
+            // Get task before deleting to include assignee in notification
+            Task task = DataStore.getTask(taskId);
             boolean deleted = DataStore.deleteTask(taskId);
+
+            if (deleted && task != null) {
+                // Broadcast with format: TASK_DELETED|task_123|Task 'title' deleted (was assigned to Assignee Name)
+                String notification = "TASK_DELETED|" + taskId + "|Task '" + task.getTitle() + "' deleted (was assigned to " + task.getAssignee() + ")";
+                UDPNotificationServer.broadcast(notification);
+            }
 
             if (!deleted) {
                 return JsonUtils.createErrorResponse("Task not found: " + taskId);

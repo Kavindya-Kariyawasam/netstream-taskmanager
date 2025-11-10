@@ -1,5 +1,5 @@
 import type { Task } from "@/types";
-import { Edit2, Trash2, Clock, User } from "lucide-react";
+import { Edit2, Trash2, Clock, User, Link2, Cloud } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
@@ -53,6 +53,41 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
           <Clock className="w-4 h-4" />
           <span>{new Date(task.deadline).toLocaleDateString()}</span>
+        </div>
+      )}
+
+      {/* Task Description (Motivational Quote) */}
+      {(task as any).description && (
+        <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+          <p className="text-sm text-slate-700 italic whitespace-pre-line">
+            {(task as any).description}
+          </p>
+        </div>
+      )}
+
+      {/* Attached URL */}
+      {(task as any).attachedUrl && (
+        <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200 flex items-start gap-2">
+          <Link2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-green-700 mb-1">Resource Link:</p>
+            <a
+              href={(task as any).attachedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-green-600 hover:text-green-800 hover:underline break-all"
+            >
+              {(task as any).attachedUrl}
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Weather Note */}
+      {(task as any).weatherNote && (
+        <div className="mb-3 p-2 bg-cyan-50 rounded-lg border border-cyan-200 flex items-start gap-2">
+          <Cloud className="w-4 h-4 text-cyan-600 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-cyan-700">{(task as any).weatherNote}</p>
         </div>
       )}
 
