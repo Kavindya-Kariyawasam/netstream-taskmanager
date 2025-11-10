@@ -45,3 +45,6 @@ backend/files/
 # Temporary files
 *.tmp
 *.bak
+ 
+# Local run guide (contains local paths/user-specific info)
+README_RUN.txt
