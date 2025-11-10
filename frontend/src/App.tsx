@@ -10,6 +10,7 @@ import { tcpService } from "./services/tcpService";
 function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"tasks" | "url">("tasks");
   const [serverStatus, setServerStatus] = useState({
     tcp: false,
@@ -81,6 +82,9 @@ function App() {
         };
         setToasts((prev) => [...prev, toast]);
 
+        // Prepend to notifications so badge updates immediately
+        setNotifications((prev) => [notif, ...prev]);
+
         // Debug log to see what we're receiving
         console.log("Received SSE notification:", notif);
       },
@@ -92,6 +96,39 @@ function App() {
     // Cleanup on unmount
     return () => {
       eventSource.close();
+    };
+  }, []);
+
+  // Fetch initial notifications once on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await tcpService.getNotifications();
+        if (mounted && resp.status === "success" && Array.isArray(resp.data)) {
+          // sort newest first
+          const parseTs = (v: any) => {
+            if (!v) return 0;
+            if (typeof v === "number") return v;
+            const n = Number(v);
+            if (!isNaN(n)) return n;
+            const p = Date.parse(String(v));
+            if (!isNaN(p)) return p;
+            return 0;
+          };
+          const sorted = resp.data
+            .slice()
+            .sort(
+              (a: any, b: any) => parseTs(b.createdAt) - parseTs(a.createdAt)
+            );
+          setNotifications(sorted);
+        }
+      } catch (e) {
+        console.debug("Failed to load initial notifications:", e);
+      }
+    })();
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -145,6 +182,40 @@ function App() {
                 visible={showNotifications}
                 onClose={() => setShowNotifications(false)}
                 onToggle={() => setShowNotifications((s) => !s)}
+                notifications={notifications}
+                onMarkAsRead={(id: string) =>
+                  setNotifications((prev) =>
+                    prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+                  )
+                }
+                onMarkAllAsRead={() =>
+                  setNotifications((prev) =>
+                    prev.map((n) => ({ ...n, read: true }))
+                  )
+                }
+                onClearAll={() => setNotifications([])}
+                onRefresh={async () => {
+                  try {
+                    const resp = await tcpService.getNotifications();
+                    if (resp.status === "success" && Array.isArray(resp.data)) {
+                      setNotifications(
+                        resp.data.slice().sort((a: any, b: any) => {
+                          const pa =
+                            Number(a.createdAt) ||
+                            Date.parse(String(a.createdAt)) ||
+                            0;
+                          const pb =
+                            Number(b.createdAt) ||
+                            Date.parse(String(b.createdAt)) ||
+                            0;
+                          return pb - pa;
+                        })
+                      );
+                    }
+                  } catch (e) {
+                    console.debug("Refresh notifications failed:", e);
+                  }
+                }}
               />
             </div>
           </div>

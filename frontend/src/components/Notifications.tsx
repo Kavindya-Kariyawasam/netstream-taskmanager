@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
-import { tcpService } from "@/services/tcpService";
 import type { Notification as NotificationType } from "@/types";
 
 function formatCreatedAt(value: string | number | undefined) {
@@ -32,77 +31,65 @@ export default function Notifications({
   visible,
   onClose,
   onToggle,
+  notifications,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onClearAll,
+  onRefresh,
 }: {
   visible: boolean;
   onClose: () => void;
   onToggle: () => void;
+  notifications: NotificationType[];
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  onClearAll: () => void;
+  onRefresh: () => void;
 }) {
-  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  // Initial fetch
+  // Close when clicking outside
   useEffect(() => {
-    fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const handler = (e: MouseEvent) => {
+      if (!visible) return;
+      const el = rootRef.current;
+      if (!el) return;
+      if (!(e.target instanceof Node)) return;
+      if (!el.contains(e.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [visible, onClose]);
 
-  // Auto-refresh when dropdown is opened
+  // Close on Escape
   useEffect(() => {
-    if (!visible) return;
-    fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && visible) onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [visible, onClose]);
 
-  const fetchNotifications = async () => {
+  const doRefresh = async () => {
     setLoading(true);
     setError(null);
     try {
-      const resp = await tcpService.getNotifications();
-      if (resp.status === "success" && resp.data) {
-        // sort newest first by createdAt (support string or number timestamps)
-        const parseTs = (v: string | number | undefined) => {
-          if (v === undefined || v === null) return 0;
-          if (typeof v === "number") return v;
-          const num = Number(v);
-          if (!isNaN(num)) return num;
-          const p = Date.parse(String(v));
-          if (!isNaN(p)) return p;
-          return 0;
-        };
-
-        const sorted = resp.data
-          .slice()
-          .sort((a, b) => parseTs(b.createdAt) - parseTs(a.createdAt));
-        setNotifications(sorted);
-      } else {
-        setError(resp.message || "Failed to load notifications");
-      }
-    } catch (err: any) {
-      setError(err.message || "Network error");
+      await onRefresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to refresh");
     } finally {
       setLoading(false);
     }
   };
 
-  const markAsRead = (notifId: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notifId ? { ...n, read: true } : n))
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-  };
-
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       {/* Bell Button */}
       <button
         onClick={onToggle}
@@ -130,14 +117,14 @@ export default function Notifications({
                 <>
                   {unreadCount > 0 && (
                     <button
-                      onClick={markAllAsRead}
+                      onClick={onMarkAllAsRead}
                       className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:bg-white px-2 py-1 rounded transition-colors"
                     >
                       Mark all read
                     </button>
                   )}
                   <button
-                    onClick={clearAll}
+                    onClick={onClearAll}
                     className="text-xs text-rose-600 hover:text-rose-800 font-medium hover:bg-white px-2 py-1 rounded transition-colors"
                   >
                     Clear all
@@ -183,7 +170,7 @@ export default function Notifications({
                     className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${
                       !n.read ? "bg-indigo-50" : ""
                     }`}
-                    onClick={() => markAsRead(n.id ?? "")}
+                    onClick={() => onMarkAsRead(n.id ?? "")}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
@@ -212,13 +199,16 @@ export default function Notifications({
           </div>
 
           {/* Footer */}
-          <div className="p-3 border-t border-slate-100 text-center bg-slate-50">
-            <button
-              onClick={fetchNotifications}
-              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
-            >
-              Refresh Notifications
-            </button>
+          <div className="p-3 border-t border-slate-100 text-center bg-slate-50 flex items-center justify-between">
+            <div>
+              <button
+                onClick={doRefresh}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+              >
+                Refresh Notifications
+              </button>
+            </div>
+            <div className="text-xs text-slate-400">Press Esc to close</div>
           </div>
         </div>
       )}

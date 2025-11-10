@@ -36,6 +36,15 @@ export default function TaskForm({ task, onSubmit, onClose }: TaskFormProps) {
     }
   }, [task]);
 
+  // Close modal on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const handleInsertMotivation = (text: string) => {
     setFormData({
       ...formData,
@@ -60,7 +69,13 @@ export default function TaskForm({ task, onSubmit, onClose }: TaskFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onMouseDown={(e) => {
+        // close when clicking on backdrop (not the modal content)
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-fade-in border border-slate-200">
         {/* Fixed Header */}
         <div className="flex justify-between items-center p-6 border-b border-slate-200 flex-shrink-0">
