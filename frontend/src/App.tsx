@@ -10,7 +10,62 @@ import { tcpService } from "./services/tcpService";
 function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [activeTab, setActiveTab] = useState<"tasks" | "url">("url");
+  const [activeTab, setActiveTab] = useState<"tasks" | "url">("tasks");
+  const [serverStatus, setServerStatus] = useState({
+    tcp: false,
+    gateway: false,
+    url: false,
+    udp: false,
+    nio: false,
+  });
+
+  // Check server status on mount
+  useEffect(() => {
+    const checkServers = async () => {
+      const status = {
+        tcp: false,
+        gateway: false,
+        url: false,
+        udp: false,
+        nio: false,
+      };
+
+      try {
+        // Check gateway (which also checks TCP since gateway forwards to TCP)
+        const gatewayResp = await fetch("http://localhost:3000/notifications", {
+          method: "GET",
+        });
+        if (gatewayResp.ok) {
+          status.gateway = true;
+          status.tcp = true; // Gateway is working, so TCP is working too
+        }
+      } catch (e) {
+        console.log("Gateway not available");
+      }
+
+      try {
+        // Check URL service
+        const urlResp = await fetch("http://localhost:8082/health", {
+          method: "GET",
+        });
+        if (urlResp.ok) status.url = true;
+      } catch (e) {
+        console.log("URL service not available");
+      }
+
+      // UDP and NIO don't have HTTP endpoints, so we'll assume they're running if TCP is running
+      // In a real app, you'd have proper health checks
+      status.udp = status.tcp;
+      status.nio = status.tcp;
+
+      setServerStatus(status);
+    };
+
+    checkServers();
+    const interval = setInterval(checkServers, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Subscribe to real-time notifications via SSE
   useEffect(() => {
@@ -58,34 +113,9 @@ function App() {
                 Network Programming Project - Java Backend Services
               </p>
             </div>
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications((s) => !s)}
-                className="relative p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-              >
-                <Bell className="w-6 h-6" />
-                <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
-              </button>
-
-              <Notifications
-                visible={showNotifications}
-                onClose={() => setShowNotifications(false)}
-              />
-            </div>
             <div className="flex items-center gap-4">
               {/* Tab Navigation */}
               <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
-                <button
-                  onClick={() => setActiveTab("url")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                    activeTab === "url"
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-slate-600 hover:text-slate-800"
-                  }`}
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>URL Service</span>
-                </button>
                 <button
                   onClick={() => setActiveTab("tasks")}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
@@ -97,11 +127,25 @@ function App() {
                   <ListTodo className="w-4 h-4" />
                   <span>Tasks</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab("url")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    activeTab === "url"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>URL Service</span>
+                </button>
               </div>
-              <button className="relative p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors">
-                <Bell className="w-6 h-6" />
-                <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
-              </button>
+
+              {/* Notifications Component with Bell Icon */}
+              <Notifications
+                visible={showNotifications}
+                onClose={() => setShowNotifications(false)}
+                onToggle={() => setShowNotifications((s) => !s)}
+              />
             </div>
           </div>
         </div>
@@ -109,12 +153,12 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {activeTab === "url" ? (
-          <URLServiceDemo />
-        ) : (
+        {activeTab === "tasks" ? (
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <TaskList />
           </div>
+        ) : (
+          <URLServiceDemo />
         )}
       </main>
 
@@ -125,10 +169,48 @@ function App() {
             <p className="font-medium text-slate-700">
               NetStream TaskManager - Network Programming Project
             </p>
-            <p className="mt-1">
-              TCP Server (8080) | HTTP Gateway (3000) | URL Service (8082) | UDP
-              Server (9090) | NIO Server (8081)
-            </p>
+            <div className="mt-2 flex items-center justify-center gap-4 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    serverStatus.tcp ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                TCP Server (8080)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    serverStatus.gateway ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                HTTP Gateway (3000)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    serverStatus.url ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                URL Service (8082)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    serverStatus.udp ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                UDP Server (9090)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    serverStatus.nio ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                NIO Server (8081)
+              </span>
+            </div>
           </div>
         </div>
       </footer>
