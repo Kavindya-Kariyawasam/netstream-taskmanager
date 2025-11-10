@@ -59,7 +59,7 @@ public class UDPClientListener {
             System.out.println("[UDP] Client port: " + clientPort);
             System.out.println("[UDP] Registered as user: " + userId);
 
-            // 1️⃣ Register with server
+            // 1) Register with server
             String registerMsg = "REGISTER:" + userId + ":" + clientPort;
             DatagramPacket registerPacket = new DatagramPacket(
                     registerMsg.getBytes(), 
@@ -76,7 +76,7 @@ public class UDPClientListener {
             }
             System.out.println("[UDP] Registration sent to server");
 
-            // 2️⃣ Start heartbeat every 5 seconds
+            // 2) Start heartbeat every 5 seconds
             Timer heartbeatTimer = new Timer(true);
             heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
                 @Override
@@ -97,8 +97,8 @@ public class UDPClientListener {
                 }
             }, 0, 5000);
 
-            // 3️⃣ Listen for incoming notifications
-            System.out.println("📡 Listening for notifications...");
+            // 3) Listen for incoming notifications
+            System.out.println("[UDP] Listening for notifications...");
             byte[] buffer = new byte[1024];
 
             while (true) {
@@ -106,8 +106,7 @@ public class UDPClientListener {
                 socket.receive(incomingPacket);
 
                 String message = new String(incomingPacket.getData(), 0, incomingPacket.getLength());
-                // Print both emoji (when supported) and a plain ASCII line so logs are visible in all terminals
-                System.out.println("🔔 Notification received: " + message);
+                // Print notification in a portable ASCII format
                 System.out.println("[UDP] Notification received: " + message);
 
                 // Send ACK to server

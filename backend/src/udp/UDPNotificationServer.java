@@ -18,7 +18,7 @@ public class UDPNotificationServer {
     public void start() {
     try (DatagramSocket serverSocket = new DatagramSocket(SERVER_PORT)) {
 
-        System.out.println("✅ UDP Notification Server started on port " + SERVER_PORT);
+    System.out.println("[UDP] Notification Server started on port " + SERVER_PORT);
 
         byte[] buffer = new byte[1024];
 
@@ -30,8 +30,8 @@ public class UDPNotificationServer {
                 clients.entrySet().removeIf(entry -> {
                     boolean expired = now - entry.getValue().lastSeen > 60000; // 60 seconds
                     if (expired) {
-                        System.out.println("Removing inactive user: " + entry.getKey());
-                    }
+                            System.out.println("Removing inactive user: " + entry.getKey());
+                        }
                     return expired;
                 });
             }
@@ -52,7 +52,7 @@ public class UDPNotificationServer {
                 String userId = parts[1];
                 int userPort = Integer.parseInt(parts[2]);
                 clients.put(userId, new ClientInfo(address, userPort));
-                System.out.println("👤 Registered User: " + userId + " at " + address + ":" + userPort);
+                System.out.println("[UDP] Registered User: " + userId + " at " + address + ":" + userPort);
                 continue;
             }
 
@@ -62,7 +62,7 @@ public class UDPNotificationServer {
                 ClientInfo client = clients.get(userId);
                 if (client != null) {
                     client.lastSeen = System.currentTimeMillis();
-                    System.out.println("💓 Heartbeat received from " + userId);
+                    System.out.println("[UDP] Heartbeat received from " + userId);
                 }
                 continue;
             }
@@ -70,11 +70,10 @@ public class UDPNotificationServer {
             // ACK:userId (client confirming notification received)
             if (msg.startsWith("ACK:")) {
                 String userId = msg.split(":")[1];
-                System.out.println("✅ ACK received from " + userId);
+                System.out.println("[UDP] ACK received from " + userId);
                 continue;
             }
-
-            System.out.println("⚠️ Unknown packet: " + msg);
+            System.out.println("[UDP] Unknown packet: " + msg);
         }
 
     } catch (Exception e) {
@@ -85,28 +84,28 @@ public class UDPNotificationServer {
 
     public void stop() {
         running = false;
-        System.out.println("🛑 UDP Server Stopped");
+        System.out.println("[UDP] Server Stopped");
     }
 
     public static void broadcast(String message) {
     try (DatagramSocket socket = new DatagramSocket()) {
 
         // 1. Send to UDP clients (native UDP protocol)
-        for (Map.Entry<String, ClientInfo> entry : clients.entrySet()) {
+            for (Map.Entry<String, ClientInfo> entry : clients.entrySet()) {
             ClientInfo client = entry.getValue();
 
             byte[] data = message.getBytes();
             DatagramPacket packet = new DatagramPacket(data, data.length, client.address, client.port);
 
             socket.send(packet);
-            System.out.println("📡 UDP broadcast sent to " + entry.getKey());
+            System.out.println("[UDP] broadcast sent to " + entry.getKey());
         }
         
         // 2. Bridge to HTTP clients (SSE) via NotificationBroadcaster
         // This bridges UDP notifications to browser-compatible format
         try {
             NotificationBroadcaster.enqueue(message);
-            System.out.println("🌐 Forwarded to HTTP clients: " + message);
+            System.out.println("[UDP] Forwarded to HTTP clients: " + message);
         } catch (Exception e) {
             System.err.println("Failed to forward to HTTP clients: " + e.getMessage());
         }

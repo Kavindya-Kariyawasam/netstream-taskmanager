@@ -62,6 +62,8 @@ public class HttpGateway {
             if (requestLine != null && requestLine.startsWith("GET /events ")) {
                 handleEventStream(browserClient, browserIn, browserOut);
                 return;
+            }
+
             // Parse the request path
             String requestPath = "/";
             if (requestLine != null && requestLine.contains(" ")) {
