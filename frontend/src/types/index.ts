@@ -15,7 +15,12 @@ export interface Notification {
   title: string;
   body?: string;
   // backend may return ISO string or a numeric timestamp
-  createdAt: string | number;
+  createdAt?: string | number;
+  // optional fields used by other code paths
+  type?: "TASK_CREATED" | "TASK_UPDATED" | "TASK_DELETED" | "TASK_ASSIGNED";
+  taskId?: string;
+  message?: string;
+  timestamp?: number;
   read?: boolean;
 }
 
@@ -58,14 +63,7 @@ export interface DeleteTaskRequest {
   };
 }
 
-export interface Notification {
-  id: string;
-  type: "TASK_CREATED" | "TASK_UPDATED" | "TASK_DELETED" | "TASK_ASSIGNED";
-  taskId: string;
-  message: string;
-  timestamp: number;
-  read: boolean;
-}
+// (previously another Notification declaration — merged above)
 
 export interface Quote {
   quote: string;
