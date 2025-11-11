@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Lightweight MonitoringService
+ *  MonitoringService
  * - Probes other local services for reachability and latency
  * - Exposes simple JSON metrics at GET /metrics on the configured port
  */
