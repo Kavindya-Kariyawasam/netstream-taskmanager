@@ -23,12 +23,24 @@ public class Main {
         Thread urlThread = new Thread(() -> urlService.start());
         urlThread.start();
 
+        // Start NIO File Server (for multipart uploads/downloads)
+        nio.NIOFileServer nioServer = new nio.NIOFileServer(8081);
+        Thread nioThread = new Thread(() -> {
+            try {
+                nioServer.start();
+            } catch (Exception e) {
+                System.err.println("[NIO] Server failed to start: " + e.getMessage());
+            }
+        });
+        nioThread.start();
+
         System.out.println("=" + "=".repeat(50));
         System.out.println("[INFO] All servers ready!");
         System.out.println("[INFO] UDP Notification Server: localhost:9090");
         System.out.println("[INFO] TCP Server: localhost:8080 (pure socket)");
         System.out.println("[INFO] HTTP Gateway: localhost:3000 (for browser)");
         System.out.println("[INFO] URL Service: localhost:8082 (external API integration)");
+        System.out.println("[INFO] NIO File Server: localhost:8081 (file uploads/downloads)");
         System.out.println("Press Ctrl+C to stop");
 
         // Graceful shutdown
@@ -38,6 +50,11 @@ public class Main {
             tcpServer.stop();
             gateway.stop();
             urlService.stop();
+            try {
+                nioServer.stop();
+            } catch (Exception e) {
+                // ignore
+            }
         }));
     }
 }
