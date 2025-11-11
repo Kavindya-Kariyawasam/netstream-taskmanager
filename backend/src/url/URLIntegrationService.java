@@ -171,6 +171,14 @@ public class URLIntegrationService {
                     String urlToParse = request.getAsJsonObject("data").get("url").getAsString();
                     return parseURL(urlToParse);
 
+                case "PING":
+                    // Lightweight health probe used by gateway/frontend
+                    Map<String, Object> ok = new HashMap<>();
+                    ok.put("status", "ok");
+                    ok.put("service", "URLIntegrationService");
+                    ok.put("time", System.currentTimeMillis());
+                    return JsonUtils.createSuccessResponse(ok);
+
                 default:
                     return JsonUtils.createErrorResponse("Unknown action: " + action);
             }
