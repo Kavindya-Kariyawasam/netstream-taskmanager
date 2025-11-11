@@ -43,18 +43,35 @@ public class Main {
         System.out.println("[INFO] NIO File Server: localhost:8081 (file uploads/downloads)");
         System.out.println("Press Ctrl+C to stop");
 
-        // Graceful shutdown
+        // Graceful shutdown: stop services and wait briefly for threads to exit.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n[INFO] Shutting down...");
-            udpServer.stop();
-            tcpServer.stop();
-            gateway.stop();
-            urlService.stop();
-            try {
-                nioServer.stop();
-            } catch (Exception e) {
-                // ignore
+
+            // Request servers to stop
+            try { udpServer.stop(); } catch (Throwable t) { /* ignore */ }
+            try { tcpServer.stop(); } catch (Throwable t) { /* ignore */ }
+            try { gateway.stop(); } catch (Throwable t) { /* ignore */ }
+            try { urlService.stop(); } catch (Throwable t) { /* ignore */ }
+            try { nioServer.stop(); } catch (Throwable t) { /* ignore */ }
+
+            // Wait for threads to finish (short timeout each). If they don't exit,
+            // interrupt them so JVM can terminate cleanly after the hook completes.
+            Thread[] threads = new Thread[] { udpThread, tcpThread, gatewayThread, urlThread, nioThread };
+            for (Thread t : threads) {
+                if (t == null) continue;
+                try {
+                    t.join(2000); // wait up to 2s
+                } catch (InterruptedException ie) {
+                    // Restore interrupt status
+                    Thread.currentThread().interrupt();
+                }
+                if (t.isAlive()) {
+                    System.out.println("[WARN] Thread did not stop in time: " + t.getName() + "; interrupting");
+                    try { t.interrupt(); } catch (Throwable x) { /* ignore */ }
+                }
             }
+
+            System.out.println("[INFO] Shutdown hook completed.");
         }));
     }
 }
