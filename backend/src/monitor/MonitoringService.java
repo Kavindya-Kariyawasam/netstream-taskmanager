@@ -1,6 +1,7 @@
 package monitor;
 
 import shared.JsonUtils;
+import shared.MetricsRegistry;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *  MonitoringService
+ * Lightweight MonitoringService
  * - Probes other local services for reachability and latency
  * - Exposes simple JSON metrics at GET /metrics on the configured port
  */
@@ -75,6 +76,7 @@ public class MonitoringService {
             // We only handle GET /metrics
             if (requestLine.startsWith("GET /metrics")) {
                 Map<String, Object> metrics = collectMetrics();
+                metrics.put("counters", MetricsRegistry.snapshot());
                 String json = JsonUtils.createSuccessResponse(metrics);
 
                 out.println("HTTP/1.1 200 OK");

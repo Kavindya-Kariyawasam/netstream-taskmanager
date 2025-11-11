@@ -7,6 +7,7 @@ import shared.Task;
 import threading.ThreadPoolManager;
 import threading.ExceptionHandler;
 import udp.UDPNotificationServer;
+import shared.MetricsRegistry;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,6 +44,8 @@ public class TCPTaskServer {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("[INFO] Client connected: " + clientSocket.getInetAddress());
+                    MetricsRegistry.tcpConnections.incrementAndGet();
+                    MetricsRegistry.tcpActiveConnections.incrementAndGet();
                     
                     threadPool.submit(() -> handleClient(clientSocket));
                     
@@ -76,11 +79,16 @@ public class TCPTaskServer {
             }
 
             System.out.println("[DEBUG] Received: " + request);
+            MetricsRegistry.tcpRequests.incrementAndGet();
+            MetricsRegistry.tcpBytesIn.addAndGet(request.getBytes().length);
 
             // Process request and send response
             String response = processRequest(request);
             out.println(response);
             System.out.println("[DEBUG] Sent: " + response);
+            if (response != null) {
+                MetricsRegistry.tcpBytesOut.addAndGet(response.getBytes().length);
+            }
 
         } catch (SocketTimeoutException e) {
             ExceptionHandler.handle(e, "Client connection timeout");
@@ -90,6 +98,7 @@ public class TCPTaskServer {
             try {
                 clientSocket.close();
                 System.out.println("[INFO] Client disconnected");
+                MetricsRegistry.tcpActiveConnections.decrementAndGet();
             } catch (IOException e) {
                 ExceptionHandler.handle(e, "Closing client socket");
             }
