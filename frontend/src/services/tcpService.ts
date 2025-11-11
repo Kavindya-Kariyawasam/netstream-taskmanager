@@ -41,6 +41,9 @@ export const tcpService = {
     assignee: string;
     deadline?: string;
     priority?: "low" | "medium" | "high";
+    description?: string;
+    attachedUrl?: string;
+    weatherNote?: string;
   }): Promise<ApiResponse<{ taskId: string; message: string }>> => {
     const request: CreateTaskRequest = {
       action: "CREATE_TASK",
@@ -100,7 +103,13 @@ export const tcpService = {
       // Format can be 3 or 4 parts:
       // "TASK_CREATED|task_123|New task assigned to John|1729350000000" (4 parts)
       // "TASK_UPDATED|task_123|completion of report" (3 parts)
-      if (body && body.status === "success" && Array.isArray(body.data) && body.data.length > 0 && typeof body.data[0] === "string") {
+      if (
+        body &&
+        body.status === "success" &&
+        Array.isArray(body.data) &&
+        body.data.length > 0 &&
+        typeof body.data[0] === "string"
+      ) {
         const mapped = (body.data as string[]).map((s, i) => {
           const parts = s.split("|");
           const eventType = parts[0] || "Notification";
@@ -112,7 +121,7 @@ export const tcpService = {
             id: taskId,
             title: message, // Use message as title for stored notifications
             body: eventType.replace(/_/g, " "), // Event type as body
-            createdAt: timestamp ? (Number(timestamp) || timestamp) : Date.now(),
+            createdAt: timestamp ? Number(timestamp) || timestamp : Date.now(),
           } as Notification;
         });
         return { status: "success", data: mapped };
@@ -192,7 +201,7 @@ export const tcpService = {
             id: taskId,
             title: eventTypeFormatted, // e.g., "TASK CREATED" or "TASK UPDATED"
             body: body,
-            createdAt: timestamp ? (Number(timestamp) || timestamp) : Date.now(),
+            createdAt: timestamp ? Number(timestamp) || timestamp : Date.now(),
           };
           onNotification(notif);
         }

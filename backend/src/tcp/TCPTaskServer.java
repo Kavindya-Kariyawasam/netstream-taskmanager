@@ -149,6 +149,10 @@ public class TCPTaskServer {
 
             // Create and store task
             Task task = new Task(id, title, assignee, deadline, priority);
+            // Optional fields
+            if (data.has("description")) task.setDescription(data.get("description").getAsString());
+            if (data.has("attachedUrl")) task.setAttachedUrl(data.get("attachedUrl").getAsString());
+            if (data.has("weatherNote")) task.setWeatherNote(data.get("weatherNote").getAsString());
             DataStore.addTask(task);
 
             // Broadcast with assignee name in the format:
@@ -239,6 +243,9 @@ public class TCPTaskServer {
             if (data.has("priority")) {
                 task.setPriority(data.get("priority").getAsString());
             }
+            if (data.has("description")) task.setDescription(data.get("description").getAsString());
+            if (data.has("attachedUrl")) task.setAttachedUrl(data.get("attachedUrl").getAsString());
+            if (data.has("weatherNote")) task.setWeatherNote(data.get("weatherNote").getAsString());
 
             DataStore.updateTask(taskId, task);
 

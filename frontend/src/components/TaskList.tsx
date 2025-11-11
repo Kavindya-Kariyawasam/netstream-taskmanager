@@ -14,6 +14,9 @@ export default function TaskList() {
   const [filterStatus, setFilterStatus] = useState<
     "all" | "pending" | "in-progress" | "completed"
   >("all");
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "deadline" | "priority"
+  >("newest");
 
   // Fetch tasks on component mount
   useEffect(() => {
@@ -106,10 +109,38 @@ export default function TaskList() {
     setEditingTask(null);
   };
 
-  const filteredTasks =
-    filterStatus === "all"
-      ? tasks
-      : tasks.filter((task) => task.status === filterStatus);
+  // Apply a deterministic sort before filtering so the order is stable.
+  const filteredTasks = (() => {
+    const sorted = tasks.slice();
+    if (sortBy === "newest") {
+      sorted.sort((a, b) => {
+        const ta = a.createdAt ? Date.parse(String(a.createdAt)) : 0;
+        const tb = b.createdAt ? Date.parse(String(b.createdAt)) : 0;
+        return tb - ta;
+      });
+    } else if (sortBy === "oldest") {
+      // oldest first by createdAt
+      sorted.sort((a, b) => {
+        const ta = a.createdAt ? Date.parse(String(a.createdAt)) : 0;
+        const tb = b.createdAt ? Date.parse(String(b.createdAt)) : 0;
+        return ta - tb;
+      });
+    } else if (sortBy === "deadline") {
+      // earliest deadline first; tasks without deadlines go to the end
+      sorted.sort((a, b) => {
+        const da = a.deadline ? Date.parse(String(a.deadline)) : Infinity;
+        const db = b.deadline ? Date.parse(String(b.deadline)) : Infinity;
+        return da - db;
+      });
+    } else if (sortBy === "priority") {
+      const score = (p?: string) => (p === "high" ? 3 : p === "medium" ? 2 : 1);
+      sorted.sort((a, b) => score(b.priority) - score(a.priority));
+    }
+
+    return filterStatus === "all"
+      ? sorted
+      : sorted.filter((task) => task.status === filterStatus);
+  })();
 
   return (
     <div className="space-y-6">
@@ -121,7 +152,38 @@ export default function TaskList() {
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"} total
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          <label className="text-sm text-slate-600 mr-2">Sort:</label>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="appearance-none px-3 py-2 pr-10 border border-slate-200 rounded-md bg-white text-sm text-slate-700"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="deadline">Deadline</option>
+              <option value="priority">Priority</option>
+            </select>
+            {/* Custom arrow positioned inside so it doesn't sit on the border */}
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 12a1 1 0 01-.707-.293l-3-3a1 1 0 011.414-1.414L10 9.586l2.293-2.293a1 1 0 011.414 1.414l-3 3A1 1 0 0110 12z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <div className="ml-2" />
+
           <button
             onClick={fetchTasks}
             disabled={loading}
@@ -151,15 +213,16 @@ export default function TaskList() {
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 font-medium transition-colors ${filterStatus === status
+              className={`px-4 py-2 font-medium transition-colors ${
+                filterStatus === status
                   ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-slate-600 hover:text-slate-900"
-                }`}
+              }`}
             >
               {status === "all"
                 ? "All"
                 : status.charAt(0).toUpperCase() +
-                status.slice(1).replace("-", " ")}
+                  status.slice(1).replace("-", " ")}
               <span className="ml-2 text-sm">
                 (
                 {status === "all"

@@ -11,6 +11,9 @@ public class Task implements Serializable {
     private String status; // "pending", "in-progress", "completed"
     private String deadline;
     private String priority; // "low", "medium", "high"
+    private String description;
+    private String attachedUrl;
+    private String weatherNote;
     private String createdAt;
     private String updatedAt;
 
@@ -24,6 +27,9 @@ public class Task implements Serializable {
         this.priority = priority;
         this.createdAt = getCurrentTimestamp();
         this.updatedAt = getCurrentTimestamp();
+        this.description = "";
+        this.attachedUrl = "";
+        this.weatherNote = "";
     }
 
     // Default constructor for JSON deserialization
@@ -54,6 +60,10 @@ public class Task implements Serializable {
     public String getPriority() {
         return priority;
     }
+
+    public String getDescription() { return description; }
+    public String getAttachedUrl() { return attachedUrl; }
+    public String getWeatherNote() { return weatherNote; }
 
     public String getCreatedAt() {
         return createdAt;
@@ -90,6 +100,21 @@ public class Task implements Serializable {
 
     public void setPriority(String priority) {
         this.priority = priority;
+        this.updatedAt = getCurrentTimestamp();
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+        this.updatedAt = getCurrentTimestamp();
+    }
+
+    public void setAttachedUrl(String attachedUrl) {
+        this.attachedUrl = attachedUrl;
+        this.updatedAt = getCurrentTimestamp();
+    }
+
+    public void setWeatherNote(String weatherNote) {
+        this.weatherNote = weatherNote;
         this.updatedAt = getCurrentTimestamp();
     }
 

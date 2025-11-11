@@ -20,23 +20,54 @@ const priorityColors = {
 };
 
 export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+  const rawNote =
+    (task as any).description ||
+    (task as any).note ||
+    (task as any).notes ||
+    "";
+  const rawWeather = (task as any).weatherNote || "";
+
+  // Clean up replacement characters and zero-width joiners that sometimes
+  // appear when emoji pass through different systems (they show as � or ?).
+  const cleanText = (s?: string) =>
+    (s || "")
+      .replace(/\uFFFD/g, "")
+      .replace(/\uFE0F/g, "")
+      .replace(/\u200D/g, "")
+      .trim();
+
+  const note = cleanText(rawNote);
+  const weather = cleanText(rawWeather);
+
+  // Choose accent color by status for left border
+  const statusAccent =
+    {
+      pending: "border-indigo-300",
+      "in-progress": "border-sky-300",
+      completed: "border-emerald-300",
+    }[task.status] || "border-slate-200";
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md hover:border-indigo-200 transition-all animate-fade-in">
+    <div
+      className={`w-full max-w-xl bg-white rounded-xl shadow-sm border ${statusAccent} border-l-4 p-5 hover:shadow-lg transition-all transform hover:-translate-y-0.5 animate-fade-in`}
+    >
       <div className="flex justify-between items-start mb-3">
         <h3 className="text-lg font-semibold text-slate-900 flex-1">
-          {task.title}
+          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            {task.title}
+          </span>
         </h3>
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(task)}
-            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+            className="p-1.5 text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg transition-all shadow-sm"
             title="Edit task"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(task.id)}
-            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors"
+            className="p-1.5 text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 rounded-lg transition-all shadow-sm"
             title="Delete task"
           >
             <Trash2 className="w-4 h-4" />
@@ -45,23 +76,23 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       </div>
 
       <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
-        <User className="w-4 h-4" />
-        <span>{task.assignee}</span>
+        <User className="w-4 h-4 text-slate-500" />
+        <span className="font-medium text-slate-700">{task.assignee}</span>
       </div>
 
       {task.deadline && (
         <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-          <Clock className="w-4 h-4" />
-          <span>{new Date(task.deadline).toLocaleDateString()}</span>
+          <Clock className="w-4 h-4 text-slate-500" />
+          <span className="text-slate-700">
+            {new Date(task.deadline).toLocaleDateString()}
+          </span>
         </div>
       )}
 
-      {/* Task Description (Motivational Quote) */}
-      {(task as any).description && (
-        <div className="mb-3 p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200">
-          <p className="text-sm text-slate-700 italic whitespace-pre-line">
-            {(task as any).description}
-          </p>
+      {/* Note / Description */}
+      {note && (
+        <div className="mb-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+          <p className="text-sm text-slate-700 whitespace-pre-line">{note}</p>
         </div>
       )}
 
@@ -70,7 +101,9 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         <div className="mb-3 p-2 bg-green-50 rounded-lg border border-green-200 flex items-start gap-2">
           <Link2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-green-700 mb-1">Resource Link:</p>
+            <p className="text-xs font-medium text-green-700 mb-1">
+              Resource Link:
+            </p>
             <a
               href={(task as any).attachedUrl}
               target="_blank"
@@ -84,10 +117,12 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       )}
 
       {/* Weather Note */}
-      {(task as any).weatherNote && (
+      {weather && (
         <div className="mb-3 p-2 bg-cyan-50 rounded-lg border border-cyan-200 flex items-start gap-2">
           <Cloud className="w-4 h-4 text-cyan-600 mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-cyan-700">{(task as any).weatherNote}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-cyan-700 truncate">{weather}</p>
+          </div>
         </div>
       )}
 
