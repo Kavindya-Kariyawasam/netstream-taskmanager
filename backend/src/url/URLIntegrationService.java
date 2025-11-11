@@ -25,7 +25,7 @@ public class URLIntegrationService {
     private int port;
     private ServerSocket serverSocket;
     private volatile boolean running = false;
-    private static final String UPLOAD_DIR = "backend/uploads/";
+    private static final String UPLOAD_DIR = "uploads/";
 
     // API Endpoints
     // Using ZenQuotes as backup - more reliable SSL certificate
