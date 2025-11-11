@@ -2,6 +2,7 @@
 package nio;
 
 import com.google.gson.Gson;
+import threading.ExceptionHandler;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -83,7 +84,7 @@ public class NIOFileServer {
                 }
             } catch (IOException e) {
                 if (running) {
-//                    ExceptionHandler.handle(e, "NIO Server - selector loop");
+                    ExceptionHandler.handle(e, "NIO Server - selector loop");
                 }
             }
         }
@@ -148,13 +149,13 @@ public class NIOFileServer {
             }
 
         } catch (Exception e) {
-//            ExceptionHandler.handle(e, "NIO Server - handling request");
+            ExceptionHandler.handle(e, "NIO Server - handling request");
         } finally {
             try {
                 channel.close();
                 key.cancel();
             } catch (IOException e) {
-//                ExceptionHandler.handle(e, "NIO Server - closing channel");
+                ExceptionHandler.handle(e, "NIO Server - closing channel");
             }
         }
     }
@@ -255,11 +256,11 @@ public class NIOFileServer {
             sendJsonResponse(out, 200, response);
 
         } catch (Exception e) {
-//            ExceptionHandler.handle(e, "NIO Server - file upload");
+            ExceptionHandler.handle(e, "NIO Server - file upload");
             try {
                 sendError(out, 500, "Upload failed: " + e.getMessage());
             } catch (IOException ex) {
-//                ExceptionHandler.handle(ex, "NIO Server - sending error response");
+                ExceptionHandler.handle(ex, "NIO Server - sending error response");
             }
         }
     }
@@ -382,11 +383,11 @@ public class NIOFileServer {
             System.out.println("[SUCCESS] File download complete: " + fileSize + " bytes sent");
 
         } catch (Exception e) {
-//            ExceptionHandler.handle(e, "NIO Server - file download");
+            ExceptionHandler.handle(e, "NIO Server - file download");
             try {
                 sendError(out, 500, "Download failed");
             } catch (IOException ex) {
-//                ExceptionHandler.handle(ex, "NIO Server - sending error");
+                ExceptionHandler.handle(ex, "NIO Server - sending error");
             }
         }
     }
@@ -456,7 +457,7 @@ public class NIOFileServer {
             }
             System.out.println("[INFO] NIO File Server stopped");
         } catch (IOException e) {
-//            ExceptionHandler.handle(e, "NIO Server - shutdown");
+            ExceptionHandler.handle(e, "NIO Server - shutdown");
         }
     }
 

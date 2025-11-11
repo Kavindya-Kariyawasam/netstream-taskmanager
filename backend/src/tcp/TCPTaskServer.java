@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import shared.DataStore;
 import shared.JsonUtils;
 import shared.Task;
+import threading.ThreadPoolManager;
+import threading.ExceptionHandler;
 import udp.UDPNotificationServer;
 
 import java.io.BufferedReader;
@@ -14,11 +16,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public class TCPTaskServer {
     private final int port;
     private ServerSocket serverSocket;
     private volatile boolean running = false;
+    private ExecutorService threadPool;
 
     public TCPTaskServer(int port) {
         this.port = port;
@@ -29,6 +33,9 @@ public class TCPTaskServer {
             serverSocket = new ServerSocket(port);
             serverSocket.setSoTimeout(1000); // 1 second timeout for accept()
             running = true;
+
+            threadPool = ThreadPoolManager.getThreadPool();
+
             System.out.println("[INFO] TCP Server started on port " + port);
             System.out.println("[INFO] Listening for client connections...");
 
@@ -37,9 +44,7 @@ public class TCPTaskServer {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("[INFO] Client connected: " + clientSocket.getInetAddress());
                     
-                    // Currently handling in the same thread
-                    // Later, ThreadPool will be implemented
-                    handleClient(clientSocket);
+                    threadPool.submit(() -> handleClient(clientSocket));
                     
                 } catch (SocketTimeoutException e) {
                     // Timeout is normal, allows checking 'running' flag
@@ -48,8 +53,7 @@ public class TCPTaskServer {
             }
 
         } catch (IOException e) {
-            System.err.println("[ERROR] TCP Server error: " + e.getMessage());
-            e.printStackTrace();
+            ExceptionHandler.handle(e, "TCP Server startup");
         } finally {
             stop();
         }
@@ -79,15 +83,15 @@ public class TCPTaskServer {
             System.out.println("[DEBUG] Sent: " + response);
 
         } catch (SocketTimeoutException e) {
-            System.err.println("[WARN] Client timeout: " + e.getMessage());
+            ExceptionHandler.handle(e, "Client connection timeout");
         } catch (IOException e) {
-            System.err.println("[ERROR] Error handling client: " + e.getMessage());
+            ExceptionHandler.handle(e, "Client communication error");
         } finally {
             try {
                 clientSocket.close();
                 System.out.println("[INFO] Client disconnected");
             } catch (IOException e) {
-                System.err.println("Error closing client socket: " + e.getMessage());
+                ExceptionHandler.handle(e, "Closing client socket");
             }
         }
     }
@@ -301,10 +305,11 @@ public class TCPTaskServer {
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
+                ThreadPoolManager.shutdown();
                 System.out.println("[INFO] TCP Server stopped");
             }
         } catch (IOException e) {
-            System.err.println("Error stopping server: " + e.getMessage());
+            ExceptionHandler.handle(e, "Stopping TCP server");
         }
     }
 

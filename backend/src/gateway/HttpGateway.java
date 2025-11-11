@@ -3,9 +3,12 @@ package gateway;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
 import shared.DataStore;
 import shared.JsonUtils;
 import shared.NotificationBroadcaster;
+import threading.ThreadPoolManager;
+import threading.ExceptionHandler;
 
 public class HttpGateway {
     private final int httpPort;
@@ -13,6 +16,7 @@ public class HttpGateway {
     private final int tcpPort;
     private ServerSocket serverSocket;
     private volatile boolean running = false;
+    private ExecutorService threadPool;
 
     public HttpGateway(int httpPort, String tcpHost, int tcpPort) {
         this.httpPort = httpPort;
@@ -24,21 +28,22 @@ public class HttpGateway {
         try {
             serverSocket = new ServerSocket(httpPort);
             running = true;
+            threadPool = ThreadPoolManager.getThreadPool();
             System.out.println("[INFO] HTTP Gateway started on port " + httpPort);
             System.out.println("[INFO] Forwarding to TCP server at " + tcpHost + ":" + tcpPort);
 
             while (running) {
                 try {
                     Socket browserClient = serverSocket.accept();
-                    new Thread(() -> handleBrowserRequest(browserClient)).start();
+                    threadPool.submit(() -> handleBrowserRequest(browserClient));
                 } catch (IOException e) {
                     if (running) {
-                        System.err.println("Error accepting connection: " + e.getMessage());
+                        ExceptionHandler.handle(e, "Gateway accepting connection");
                     }
                 }
             }
         } catch (IOException e) {
-            System.err.println("Gateway error: " + e.getMessage());
+            ExceptionHandler.handle(e, "Gateway startup");
         }
     }
 
@@ -113,12 +118,12 @@ public class HttpGateway {
             sendHttpResponse(browserOut, response);
 
         } catch (IOException e) {
-            System.err.println("Error handling browser request: " + e.getMessage());
+            ExceptionHandler.handle(e, "Gateway handling browser request");
         } finally {
             try {
                 browserClient.close();
             } catch (IOException e) {
-                // Ignore
+                ExceptionHandler.handle(e, "Gateway closing browser client");
             }
         }
     }
@@ -141,7 +146,7 @@ public class HttpGateway {
             return response != null ? response : "{\"status\":\"error\",\"message\":\"No response from server\"}";
 
         } catch (IOException e) {
-            System.err.println("Error communicating with " + host + ":" + port + " - " + e.getMessage());
+            ExceptionHandler.handle(e, "Gateway forwarding to service " + host + ":" + port);
             return "{\"status\":\"error\",\"message\":\"Cannot connect to service at " + host + ":" + port + "\"}";
         }
     }
@@ -225,8 +230,9 @@ public class HttpGateway {
             if (serverSocket != null) {
                 serverSocket.close();
             }
+            ThreadPoolManager.shutdown();
         } catch (IOException e) {
-            System.err.println("Error stopping gateway: " + e.getMessage());
+            ExceptionHandler.handle(e, "Gateway stopping");
         }
     }
 
