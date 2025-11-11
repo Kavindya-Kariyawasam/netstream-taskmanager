@@ -151,11 +151,6 @@ public class URLIntegrationService {
                             : null;
                     return downloadFile(fileUrl, fileName);
 
-                case "UPLOAD_FILE":
-                    String fileData = request.getAsJsonObject("data").get("fileData").getAsString();
-                    String uploadFileName = request.getAsJsonObject("data").get("fileName").getAsString();
-                    return uploadFile(fileData, uploadFileName);
-
                 case "GET_WEATHER":
                     String city = request.getAsJsonObject("data").get("city").getAsString();
                     return getWeatherInfo(city);
@@ -166,10 +161,6 @@ public class URLIntegrationService {
                             ? request.getAsJsonObject("data").get("method").getAsString()
                             : "GET";
                     return fetchFromAPI(apiUrl, method);
-
-                case "PARSE_URL":
-                    String urlToParse = request.getAsJsonObject("data").get("url").getAsString();
-                    return parseURL(urlToParse);
 
                 case "PING":
                     // Lightweight health probe used by gateway/frontend
@@ -358,30 +349,6 @@ public class URLIntegrationService {
     }
 
     /**
-     * Upload file (save to local directory)
-     */
-    private String uploadFile(String fileData, String fileName) {
-        try {
-            Path filePath = Paths.get(UPLOAD_DIR, fileName);
-
-            // Decode base64 if needed, or just save as text
-            byte[] data = fileData.getBytes(StandardCharsets.UTF_8);
-            Files.write(filePath, data);
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("fileName", fileName);
-            result.put("filePath", filePath.toString());
-            result.put("fileSize", data.length);
-            result.put("uploadedAt", System.currentTimeMillis());
-
-            return JsonUtils.createSuccessResponse(result);
-
-        } catch (IOException e) {
-            return JsonUtils.createErrorResponse("Upload failed: " + e.getMessage());
-        }
-    }
-
-    /**
      * Get weather information (using free weather API)
      * Note: This is a demo implementation using wttr.in
      */
@@ -473,50 +440,6 @@ public class URLIntegrationService {
             return JsonUtils.createErrorResponse("Invalid URL: " + e.getMessage());
         } catch (IOException e) {
             return JsonUtils.createErrorResponse("API request failed: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Parse URL and extract components
-     */
-    private String parseURL(String urlString) {
-        try {
-            URL url = new URL(urlString);
-            URI uri = url.toURI();
-
-            Map<String, Object> components = new HashMap<>();
-            components.put("originalUrl", urlString);
-            components.put("protocol", url.getProtocol());
-            components.put("host", url.getHost());
-            components.put("port", url.getPort() == -1 ? url.getDefaultPort() : url.getPort());
-            components.put("path", url.getPath());
-            components.put("query", url.getQuery());
-            components.put("ref", url.getRef());
-            components.put("authority", url.getAuthority());
-            components.put("userInfo", url.getUserInfo());
-            components.put("file", url.getFile());
-
-            // Parse query parameters
-            if (url.getQuery() != null) {
-                Map<String, String> params = new HashMap<>();
-                String[] pairs = url.getQuery().split("&");
-                for (String pair : pairs) {
-                    int idx = pair.indexOf("=");
-                    if (idx > 0) {
-                        params.put(
-                                URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
-                                URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
-                    }
-                }
-                components.put("queryParams", params);
-            }
-
-            return JsonUtils.createSuccessResponse(components);
-
-        } catch (MalformedURLException e) {
-            return JsonUtils.createErrorResponse("Malformed URL: " + e.getMessage());
-        } catch (Exception e) {
-            return JsonUtils.createErrorResponse("URL parsing error: " + e.getMessage());
         }
     }
 

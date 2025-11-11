@@ -4,9 +4,7 @@ import {
   User,
   CheckCircle,
   XCircle,
-  Link2,
   Download,
-  Upload,
   Cloud,
   Globe,
   Loader2,
@@ -29,9 +27,6 @@ const URLServiceDemo: React.FC = () => {
   // Input states
   const [email, setEmail] = useState("demo@example.com");
   const [urlToValidate, setUrlToValidate] = useState("https://www.google.com");
-  const [urlToParse, setUrlToParse] = useState(
-    "https://example.com:8080/path?param1=value1#section"
-  );
   const [city, setCity] = useState("London");
   const [downloadUrl, setDownloadUrl] = useState(
     "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
@@ -102,13 +97,6 @@ const URLServiceDemo: React.FC = () => {
     setLoading(null);
   };
 
-  const handleParseUrl = async () => {
-    setLoading("parse");
-    const result = await sendRequest("PARSE_URL", { url: urlToParse });
-    setResults({ ...results, parse: result });
-    setLoading(null);
-  };
-
   const handleGetWeather = async () => {
     setLoading("weather");
     const result = await sendRequest("GET_WEATHER", { city });
@@ -123,16 +111,6 @@ const URLServiceDemo: React.FC = () => {
       fileName: "downloaded_file.pdf",
     });
     setResults({ ...results, download: result });
-    setLoading(null);
-  };
-
-  const handleUploadFile = async () => {
-    setLoading("upload");
-    const result = await sendRequest("UPLOAD_FILE", {
-      fileData: "Sample file content from frontend demo",
-      fileName: "frontend_upload.txt",
-    });
-    setResults({ ...results, upload: result });
     setLoading(null);
   };
 
@@ -161,7 +139,7 @@ const URLServiceDemo: React.FC = () => {
             URL Integration Service Demo
           </h1>
           <p className="text-lg text-slate-600">
-            Member 3 - URLs/URIs & URLConnection
+            URLs/URIs & URLConnection
           </p>
           <div className="mt-4 flex items-center justify-center gap-2 text-sm">
             <div
@@ -383,93 +361,6 @@ const URLServiceDemo: React.FC = () => {
             )}
           </div>
 
-          {/* 4. PARSE_URL */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200 hover:shadow-2xl transition-shadow">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl">
-                <Link2 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">URL Parser</h3>
-                <p className="text-sm text-slate-500">Extract URL components</p>
-              </div>
-            </div>
-
-            <input
-              type="text"
-              value={urlToParse}
-              onChange={(e) => setUrlToParse(e.target.value)}
-              placeholder="Enter URL to parse"
-              className="w-full px-4 py-2 border border-slate-300 rounded-xl mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-
-            <button
-              onClick={handleParseUrl}
-              disabled={loading === "parse"}
-              className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading === "parse" ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Parsing...
-                </>
-              ) : (
-                "Parse URL"
-              )}
-            </button>
-
-            {results.parse && results.parse.status === "success" && (
-              <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 max-h-64 overflow-y-auto">
-                <div className="space-y-1 text-xs font-mono">
-                  <p>
-                    <span className="font-bold text-purple-700">Protocol:</span>{" "}
-                    {results.parse.data.protocol}
-                  </p>
-                  <p>
-                    <span className="font-bold text-purple-700">Host:</span>{" "}
-                    {results.parse.data.host}
-                  </p>
-                  <p>
-                    <span className="font-bold text-purple-700">Port:</span>{" "}
-                    {results.parse.data.port}
-                  </p>
-                  <p>
-                    <span className="font-bold text-purple-700">Path:</span>{" "}
-                    {results.parse.data.path}
-                  </p>
-                  {results.parse.data.query && (
-                    <p>
-                      <span className="font-bold text-purple-700">Query:</span>{" "}
-                      {results.parse.data.query}
-                    </p>
-                  )}
-                  {results.parse.data.ref && (
-                    <p>
-                      <span className="font-bold text-purple-700">
-                        Fragment:
-                      </span>{" "}
-                      {results.parse.data.ref}
-                    </p>
-                  )}
-                  {results.parse.data.queryParams && (
-                    <div className="mt-2">
-                      <p className="font-bold text-purple-700 mb-1">
-                        Query Parameters:
-                      </p>
-                      {Object.entries(results.parse.data.queryParams).map(
-                        ([key, value]) => (
-                          <p key={key} className="ml-4">
-                            • {key}: {value as string}
-                          </p>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* 5. GET_WEATHER */}
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200 hover:shadow-2xl transition-shadow">
             <div className="flex items-center gap-3 mb-4">
@@ -606,58 +497,6 @@ const URLServiceDemo: React.FC = () => {
             )}
           </div>
 
-          {/* 7. UPLOAD_FILE */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200 hover:shadow-2xl transition-shadow">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-rose-400 to-red-500 rounded-xl">
-                <Upload className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">
-                  File Upload
-                </h3>
-                <p className="text-sm text-slate-500">Upload to server</p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleUploadFile}
-              disabled={loading === "upload"}
-              className="w-full py-3 px-4 bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading === "upload" ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                "Upload Sample File"
-              )}
-            </button>
-
-            {results.upload && results.upload.status === "success" && (
-              <div className="mt-4 p-4 bg-gradient-to-br from-rose-50 to-red-50 rounded-xl border border-rose-200">
-                <div className="space-y-2 text-sm">
-                  <p>
-                    <span className="font-bold text-rose-700">File:</span>{" "}
-                    {results.upload.data.fileName}
-                  </p>
-                  <p>
-                    <span className="font-bold text-rose-700">Size:</span>{" "}
-                    {results.upload.data.fileSize} bytes
-                  </p>
-                  <p className="text-xs text-slate-600 break-all">
-                    <span className="font-bold text-rose-700">Path:</span>{" "}
-                    {results.upload.data.filePath}
-                  </p>
-                  <p className="text-xs text-green-600 font-medium">
-                    ✓ Upload successful!
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* 8. FETCH_API */}
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-slate-200 hover:shadow-2xl transition-shadow">
             <div className="flex items-center gap-3 mb-4">
@@ -722,7 +561,7 @@ const URLServiceDemo: React.FC = () => {
         <div className="mt-12 text-center">
           <div className="inline-block bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-2">
-              Member 3 - URL/URI Integration Service
+              URL/URI Integration Service
             </h3>
             <p className="text-sm text-slate-600 mb-4">
               Demonstrating URL, URI, URLConnection, and HttpURLConnection
@@ -732,7 +571,7 @@ const URLServiceDemo: React.FC = () => {
                 TCP Server (Port 8082)
               </span>
               <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-medium">
-                8 Features
+                6 Features
               </span>
               <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
                 3 External APIs
