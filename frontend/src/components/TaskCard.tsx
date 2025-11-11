@@ -49,7 +49,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
   return (
     <div
-      className={`w-full max-w-xl bg-white rounded-xl shadow-sm border ${statusAccent} border-l-4 p-5 hover:shadow-lg transition-all transform hover:-translate-y-0.5 animate-fade-in`}
+      className={`w-full bg-white rounded-xl shadow-sm border ${statusAccent} border-l-4 p-5 hover:shadow-lg transition-all transform hover:-translate-y-0.5 animate-fade-in`}
     >
       <div className="flex justify-between items-start mb-3">
         <h3 className="text-lg font-semibold text-slate-900 flex-1">
@@ -121,7 +121,7 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         <div className="mb-3 p-2 bg-cyan-50 rounded-lg border border-cyan-200 flex items-start gap-2">
           <Cloud className="w-4 h-4 text-cyan-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-cyan-700 truncate">{weather}</p>
+            <p className="text-xs text-cyan-700">{weather}</p>
           </div>
         </div>
       )}
