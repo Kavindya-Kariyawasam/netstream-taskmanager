@@ -163,7 +163,7 @@ function App() {
                 NetStream TaskManager
               </h1>
               <p className="text-sm text-slate-600 mt-1">
-                Network Programming Project - Java Backend Services
+                Real-Time Collaborative Task Management System
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -239,22 +239,24 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
-        {activeTab === "tasks" ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Task List - Takes 2 columns */}
-            <div className="lg:col-span-2">
-              <TaskList />
-            </div>
+      <main className="flex-1 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {activeTab === "tasks" ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              {/* Task List - Takes 2 columns */}
+              <div className="lg:col-span-2">
+                <TaskList />
+              </div>
 
-            {/* Sidebar - Takes 1 column */}
-            <div className="space-y-6">
-              <FileUpload />
+              {/* Sidebar - Takes 1 column */}
+              <aside className="space-y-6">
+                <FileUpload />
+              </aside>
             </div>
-          </div>
-        ) : (
-          <URLServiceDemo />
-        )}
+          ) : (
+            <URLServiceDemo />
+          )}
+        </div>
       </main>
 
       {/* Footer */}
@@ -262,7 +264,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-sm text-slate-500">
             <p className="font-medium text-slate-700">
-              NetStream TaskManager - Network Programming Project
+              Presented by the NetStream Team
             </p>
             <div className="mt-2 flex items-center justify-center gap-4 flex-wrap">
               <span className="flex items-center gap-1.5">
