@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Globe, ListTodo } from "lucide-react";
+import { Globe, ListTodo, Activity, Link } from "lucide-react";
 import TaskList from "./components/TaskList";
 import FileUpload from "@/components/FileUpload.tsx";
 import Notifications from "./components/Notifications";
@@ -13,13 +13,16 @@ function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"tasks" | "url" | "network">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "url" | "monitoring">(
+    "tasks"
+  );
   const [serverStatus, setServerStatus] = useState({
     tcp: false,
     gateway: false,
     url: false,
     udp: false,
     nio: false,
+    monitor: false,
   });
 
   // Check server status on mount
@@ -31,6 +34,7 @@ function App() {
         url: false,
         udp: false,
         nio: false,
+        monitor: false,
       };
 
       try {
@@ -69,6 +73,16 @@ function App() {
         }
       } catch (e) {
         console.log("URL service not available");
+      }
+
+      try {
+        // Check monitoring service
+        const monitorResp = await fetch("http://localhost:4000/metrics", {
+          method: "GET",
+        });
+        if (monitorResp.ok) status.monitor = true;
+      } catch (e) {
+        console.log("Monitoring service not available");
       }
 
       // UDP and NIO don't have HTTP endpoints, so we'll assume they're running if TCP is running
@@ -183,18 +197,6 @@ function App() {
                 </button>
 
                 <button
-                  onClick={() => setActiveTab("network")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                    activeTab === "network"
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-slate-600 hover:text-slate-800"
-                  }`}
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>Network</span>
-                </button>
-
-                <button
                   onClick={() => setActiveTab("url")}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                     activeTab === "url"
@@ -202,8 +204,20 @@ function App() {
                       : "text-slate-600 hover:text-slate-800"
                   }`}
                 >
-                  <Globe className="w-4 h-4" />
+                  <Link className="w-4 h-4" />
                   <span>URL Service</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("monitoring")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    activeTab === "monitoring"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  <Activity className="w-4 h-4" />
+                  <span>Monitoring</span>
                 </button>
               </div>
 
@@ -322,6 +336,14 @@ function App() {
                   }`}
                 ></span>
                 NIO Server (8081)
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    serverStatus.monitor ? "bg-green-500" : "bg-red-500"
+                  }`}
+                ></span>
+                Monitor (4000)
               </span>
             </div>
           </div>
