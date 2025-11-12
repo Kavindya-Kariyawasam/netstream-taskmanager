@@ -40,8 +40,12 @@ public class HttpGateway {
                     MetricsRegistry.httpConnections.incrementAndGet();
                     MetricsRegistry.httpActiveConnections.incrementAndGet();
                 } catch (IOException e) {
+                    // If serverSocket was closed as part of shutdown, accept() will throw.
+                    // Only treat as an error if the gateway is still meant to be running.
                     if (running) {
                         ExceptionHandler.handle(e, "Gateway accepting connection");
+                    } else {
+                        System.out.println("[DEBUG] Gateway accept interrupted during shutdown: " + e.getMessage());
                     }
                 }
             }

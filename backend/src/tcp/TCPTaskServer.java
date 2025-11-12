@@ -56,7 +56,14 @@ public class TCPTaskServer {
             }
 
         } catch (IOException e) {
-            ExceptionHandler.handle(e, "TCP Server startup");
+            // If we're shutting down, accept() may throw SocketException("Socket closed").
+            // This is expected during graceful shutdown — only log if server is still running.
+            if (running) {
+                ExceptionHandler.handle(e, "TCP Server startup");
+            } else {
+                // Quietly ignore expected exception during shutdown
+                System.out.println("[DEBUG] TCP Server accept interrupted during shutdown: " + e.getMessage());
+            }
         } finally {
             stop();
         }

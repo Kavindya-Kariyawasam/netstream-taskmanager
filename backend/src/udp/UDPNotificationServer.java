@@ -11,82 +11,99 @@ import shared.MetricsRegistry;
 public class UDPNotificationServer {
 
     private static final int SERVER_PORT = 9090;
-    private boolean running = true;
+    private volatile boolean running = true;
 
     // userId -> client address + port
     private static final Map<String, ClientInfo> clients = new ConcurrentHashMap<>();
+    private DatagramSocket serverSocket;
 
     public void start() {
-    try (DatagramSocket serverSocket = new DatagramSocket(SERVER_PORT)) {
+        try {
+            serverSocket = new DatagramSocket(SERVER_PORT);
 
-    System.out.println("[UDP] Notification Server started on port " + SERVER_PORT);
+            System.out.println("[UDP] Notification Server started on port " + SERVER_PORT);
 
-        byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[1024];
 
-        // Cleanup inactive clients every 30 seconds
-        new java.util.Timer(true).scheduleAtFixedRate(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                long now = System.currentTimeMillis();
-                clients.entrySet().removeIf(entry -> {
-                    boolean expired = now - entry.getValue().lastSeen > 60000; // 60 seconds
-                    if (expired) {
+            // Cleanup inactive clients every 30 seconds
+            new java.util.Timer(true).scheduleAtFixedRate(new java.util.TimerTask() {
+                @Override
+                public void run() {
+                    long now = System.currentTimeMillis();
+                    clients.entrySet().removeIf(entry -> {
+                        boolean expired = now - entry.getValue().lastSeen > 60000; // 60 seconds
+                        if (expired) {
                             System.out.println("Removing inactive user: " + entry.getKey());
                         }
-                    return expired;
-                });
-            }
-        }, 0, 30000);
-
-
-        while (running) {
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-            serverSocket.receive(packet);
-
-            String msg = new String(packet.getData(), 0, packet.getLength());
-            InetAddress address = packet.getAddress();
-            int port = packet.getPort();
-            MetricsRegistry.udpPacketsIn.incrementAndGet();
-            MetricsRegistry.udpBytesIn.addAndGet(packet.getLength());
-
-            // REGISTER:userId:clientPort
-            if (msg.startsWith("REGISTER:")) {
-                String[] parts = msg.split(":");
-                String userId = parts[1];
-                int userPort = Integer.parseInt(parts[2]);
-                clients.put(userId, new ClientInfo(address, userPort));
-                System.out.println("[UDP] Registered User: " + userId + " at " + address + ":" + userPort);
-                continue;
-            }
-
-            // HEARTBEAT:userId
-            if (msg.startsWith("HEARTBEAT:")) {
-                String userId = msg.split(":")[1];
-                ClientInfo client = clients.get(userId);
-                if (client != null) {
-                    client.lastSeen = System.currentTimeMillis();
-                    System.out.println("[UDP] Heartbeat received from " + userId);
+                        return expired;
+                    });
                 }
-                continue;
+            }, 0, 30000);
+
+            while (running) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    serverSocket.receive(packet);
+
+                    String msg = new String(packet.getData(), 0, packet.getLength());
+                    InetAddress address = packet.getAddress();
+                    // int port = packet.getPort(); // not used currently
+                    MetricsRegistry.udpPacketsIn.incrementAndGet();
+                    MetricsRegistry.udpBytesIn.addAndGet(packet.getLength());
+
+                    // REGISTER:userId:clientPort
+                    if (msg.startsWith("REGISTER:")) {
+                        String[] parts = msg.split(":");
+                        String userId = parts[1];
+                        int userPort = Integer.parseInt(parts[2]);
+                        clients.put(userId, new ClientInfo(address, userPort));
+                        System.out.println("[UDP] Registered User: " + userId + " at " + address + ":" + userPort);
+                        continue;
+                    }
+
+                    // HEARTBEAT:userId
+                    if (msg.startsWith("HEARTBEAT:")) {
+                        String userId = msg.split(":")[1];
+                        ClientInfo client = clients.get(userId);
+                        if (client != null) {
+                            client.lastSeen = System.currentTimeMillis();
+                            System.out.println("[UDP] Heartbeat received from " + userId);
+                        }
+                        continue;
+                    }
+
+                    // ACK:userId (client confirming notification received)
+                    if (msg.startsWith("ACK:")) {
+                        String userId = msg.split(":")[1];
+                        System.out.println("[UDP] ACK received from " + userId);
+                        continue;
+                    }
+                    System.out.println("[UDP] Unknown packet: " + msg);
+                } catch (Exception e) {
+                    if (running) {
+                        e.printStackTrace();
+                    } else {
+                        // socket closed during shutdown - expected
+                        System.out.println("[DEBUG] UDP server receive interrupted during shutdown: " + e.getMessage());
+                    }
+                }
             }
 
-            // ACK:userId (client confirming notification received)
-            if (msg.startsWith("ACK:")) {
-                String userId = msg.split(":")[1];
-                System.out.println("[UDP] ACK received from " + userId);
-                continue;
+        } catch (Exception e) {
+            System.err.println("[UDP] Failed to start: " + e.getMessage());
+        } finally {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
             }
-            System.out.println("[UDP] Unknown packet: " + msg);
         }
-
-    } catch (Exception e) {
-        e.printStackTrace();
     }
-}
 
 
     public void stop() {
         running = false;
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            serverSocket.close();
+        }
         System.out.println("[UDP] Server Stopped");
     }
 
