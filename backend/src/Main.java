@@ -18,7 +18,7 @@ public class Main {
         Thread gatewayThread = new Thread(() -> gateway.start());
         gatewayThread.start();
 
-        // Start URL Integration Service (Member 3)
+    // Start URL Integration Service (Member 3)
         url.URLIntegrationService urlService = new url.URLIntegrationService(8082);
         Thread urlThread = new Thread(() -> urlService.start());
         urlThread.start();
@@ -33,6 +33,11 @@ public class Main {
             }
         });
         nioThread.start();
+
+    // Start Monitoring Service (port 4000)
+    monitor.MonitoringService monitor = new monitor.MonitoringService(4000);
+    Thread monitorThread = new Thread(() -> monitor.start());
+    monitorThread.start();
 
         System.out.println("=" + "=".repeat(50));
         System.out.println("[INFO] All servers ready!");

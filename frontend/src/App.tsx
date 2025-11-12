@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
-import { Bell, Globe, ListTodo } from "lucide-react";
+import { Globe, ListTodo } from "lucide-react";
 import TaskList from "./components/TaskList";
 import FileUpload from "@/components/FileUpload.tsx";
 import Notifications from "./components/Notifications";
 import ToastContainer from "./components/Toast";
 import type { ToastMessage } from "./components/Toast";
 import URLServiceDemo from "./components/URLServiceDemo";
+import NetworkDiagnostics from "./components/NetworkDiagnostics";
 import { tcpService } from "./services/tcpService";
 
 function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"tasks" | "url">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "url" | "network">("tasks");
   const [serverStatus, setServerStatus] = useState({
     tcp: false,
     gateway: false,
@@ -180,6 +181,19 @@ function App() {
                   <ListTodo className="w-4 h-4" />
                   <span>Tasks</span>
                 </button>
+
+                <button
+                  onClick={() => setActiveTab("network")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    activeTab === "network"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-600 hover:text-slate-800"
+                  }`}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>Network</span>
+                </button>
+
                 <button
                   onClick={() => setActiveTab("url")}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
@@ -253,8 +267,10 @@ function App() {
                 <FileUpload />
               </aside>
             </div>
-          ) : (
+          ) : activeTab === "url" ? (
             <URLServiceDemo />
+          ) : (
+            <NetworkDiagnostics />
           )}
         </div>
       </main>

@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import shared.NotificationBroadcaster;
+import shared.MetricsRegistry;
 
 public class UDPNotificationServer {
 
@@ -45,6 +46,8 @@ public class UDPNotificationServer {
             String msg = new String(packet.getData(), 0, packet.getLength());
             InetAddress address = packet.getAddress();
             int port = packet.getPort();
+            MetricsRegistry.udpPacketsIn.incrementAndGet();
+            MetricsRegistry.udpBytesIn.addAndGet(packet.getLength());
 
             // REGISTER:userId:clientPort
             if (msg.startsWith("REGISTER:")) {
@@ -98,6 +101,8 @@ public class UDPNotificationServer {
             DatagramPacket packet = new DatagramPacket(data, data.length, client.address, client.port);
 
             socket.send(packet);
+            MetricsRegistry.udpPacketsOut.incrementAndGet();
+            MetricsRegistry.udpBytesOut.addAndGet(data.length);
             System.out.println("[UDP] broadcast sent to " + entry.getKey());
         }
         

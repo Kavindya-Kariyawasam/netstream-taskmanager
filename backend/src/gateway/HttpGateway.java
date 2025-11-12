@@ -9,6 +9,7 @@ import shared.JsonUtils;
 import shared.NotificationBroadcaster;
 import threading.ThreadPoolManager;
 import threading.ExceptionHandler;
+import shared.MetricsRegistry;
 
 public class HttpGateway {
     private final int httpPort;
@@ -36,6 +37,8 @@ public class HttpGateway {
                 try {
                     Socket browserClient = serverSocket.accept();
                     threadPool.submit(() -> handleBrowserRequest(browserClient));
+                    MetricsRegistry.httpConnections.incrementAndGet();
+                    MetricsRegistry.httpActiveConnections.incrementAndGet();
                 } catch (IOException e) {
                     if (running) {
                         ExceptionHandler.handle(e, "Gateway accepting connection");
@@ -52,6 +55,7 @@ public class HttpGateway {
                 BufferedReader browserIn = new BufferedReader(
                         new InputStreamReader(browserClient.getInputStream()));
                 PrintWriter browserOut = new PrintWriter(browserClient.getOutputStream(), true)) {
+        MetricsRegistry.httpRequests.incrementAndGet();
             // Read HTTP request from browser
             String requestLine = browserIn.readLine();
             System.out.println("[INFO] HTTP Request: " + requestLine);
@@ -99,6 +103,7 @@ public class HttpGateway {
                 char[] buffer = new char[contentLength];
                 browserIn.read(buffer, 0, contentLength);
                 jsonBody = new String(buffer);
+                MetricsRegistry.httpBytesIn.addAndGet(contentLength);
             }
 
             System.out.println("[DEBUG] Request Path: " + requestPath);
@@ -116,12 +121,16 @@ public class HttpGateway {
 
             // Send HTTP response back to browser
             sendHttpResponse(browserOut, response);
+            if (response != null) {
+                MetricsRegistry.httpBytesOut.addAndGet(response.length());
+            }
 
         } catch (IOException e) {
             ExceptionHandler.handle(e, "Gateway handling browser request");
         } finally {
             try {
                 browserClient.close();
+                MetricsRegistry.httpActiveConnections.decrementAndGet();
             } catch (IOException e) {
                 ExceptionHandler.handle(e, "Gateway closing browser client");
             }
