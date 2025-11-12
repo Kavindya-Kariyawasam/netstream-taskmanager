@@ -20,11 +20,13 @@ public class DataStore {
 
     // Persistence file path
     private static final Path TASKS_FILE = Paths.get("data", "tasks.json");
+    private static final Path NOTIFICATIONS_FILE = Paths.get("data", "notifications.json");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     // Static initializer to load tasks on startup
     static {
         loadTasks();
+        loadNotifications();
     }
 
     // Task operations
@@ -74,6 +76,8 @@ public class DataStore {
         if (notifications.size() > 100) {
             notifications.remove(0);
         }
+        // Persist notifications to disk
+        saveNotifications();
         // Note: Broadcasting is handled by UDPNotificationServer.broadcast()
         // which forwards to both UDP clients AND HTTP clients via NotificationBroadcaster
     }
@@ -84,6 +88,7 @@ public class DataStore {
 
     public static void clearNotifications() {
         notifications.clear();
+        saveNotifications();
     }
 
     // Utility methods
@@ -110,6 +115,46 @@ public class DataStore {
             System.out.println("[DataStore] Tasks persisted to " + TASKS_FILE.toAbsolutePath());
         } catch (IOException e) {
             System.err.println("[ERROR] Failed to save tasks: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void saveNotifications() {
+        try {
+            // Ensure data directory exists
+            Files.createDirectories(NOTIFICATIONS_FILE.getParent());
+
+            // Write notifications as JSON array of strings
+            List<String> copy;
+            synchronized (notifications) {
+                copy = new ArrayList<>(notifications);
+            }
+            String json = gson.toJson(copy);
+            Files.writeString(NOTIFICATIONS_FILE, json);
+            System.out.println("[DataStore] Notifications persisted to " + NOTIFICATIONS_FILE.toAbsolutePath());
+        } catch (IOException e) {
+            System.err.println("[ERROR] Failed to save notifications: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void loadNotifications() {
+        try {
+            if (Files.exists(NOTIFICATIONS_FILE)) {
+                String json = Files.readString(NOTIFICATIONS_FILE);
+                List<String> notifList = gson.fromJson(json, new TypeToken<List<String>>(){}.getType());
+                if (notifList != null) {
+                    synchronized (notifications) {
+                        notifications.clear();
+                        notifications.addAll(notifList);
+                    }
+                    System.out.println("[DataStore] Loaded " + notifList.size() + " notifications from " + NOTIFICATIONS_FILE.toAbsolutePath());
+                }
+            } else {
+                System.out.println("[DataStore] No existing notifications file found, starting with empty list");
+            }
+        } catch (IOException e) {
+            System.err.println("[ERROR] Failed to load notifications: " + e.getMessage());
             e.printStackTrace();
         }
     }
