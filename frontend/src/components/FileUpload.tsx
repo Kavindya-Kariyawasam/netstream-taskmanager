@@ -98,9 +98,17 @@ export default function FileUpload() {
         }
     };
 
-    const handleRemove = (fileId: string) => {
-        setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    const handleRemove = async (fileId: string) => {
+        try {
+            await nioService.deleteFile(fileId); // <-- calls server
+            setFiles((prev) => prev.filter((f) => f.id !== fileId)); // update UI
+        } catch (error) {
+            console.error("Delete failed:", error);
+            alert("Delete failed");
+        }
     };
+
+
 
     const formatFileSize = (bytes: number): string => {
         if (bytes === 0) return "0 Bytes";

@@ -38,4 +38,9 @@ export const nioService = {
         });
         return response.data;
     },
+
+    deleteFile: async (fileId: string) => {
+        return axios.delete(`${NIO_API}/files/${fileId}`);
+    }
+
 };

@@ -31,6 +31,7 @@ public class NIOFileServer {
     private static final int BUFFER_SIZE = 8192;
     private static final Path UPLOAD_DIR = Paths.get("uploads");
     private final Map<String, FileMetadata> fileMetadataStore = new ConcurrentHashMap<>();
+    private final Map<String, FileInfo> fileMap = new ConcurrentHashMap<>();
 
     public NIOFileServer(int port) {
         this(port, 4); // Default to 4 worker threads
@@ -43,6 +44,16 @@ public class NIOFileServer {
             Files.createDirectories(UPLOAD_DIR);
         } catch (IOException e) {
             System.err.println("[ERROR] Failed to create upload directory: " + e.getMessage());
+        }
+    }
+
+    private static class FileInfo {
+        String fileName;
+        String filePath;
+
+        FileInfo(String fileName, String filePath) {
+            this.fileName = fileName;
+            this.filePath = filePath;
         }
     }
 
@@ -144,7 +155,9 @@ public class NIOFileServer {
             } else if ("GET".equals(method) && path.startsWith("/download/")) {
                 String fileId = path.substring("/download/".length());
                 handleFileDownload(out, fileId);
-            } else {
+            }else if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/files/")) {
+                handleFileDelete(channel.socket().getOutputStream(), path);
+            }else {
                 sendError(out, 404, "Endpoint not found");
             }
 
@@ -391,6 +404,25 @@ public class NIOFileServer {
             }
         }
     }
+
+    private void handleFileDelete(OutputStream out, String path) throws IOException {
+        String fileId = path.substring("/files/".length());
+        FileMetadata info = fileMetadataStore.get(fileId);
+
+        if (info == null) {
+            sendJsonResponse(out, 404, Map.of("status", "error", "message", "File not found"));
+            return;
+        }
+
+        Path filePath = Paths.get(info.getStoredPath());
+        Files.deleteIfExists(filePath);
+        fileMetadataStore.remove(fileId);
+
+        sendJsonResponse(out, 200, Map.of("status", "success", "message", "File deleted successfully"));
+    }
+
+
+
 
     private void sendJsonResponse(OutputStream out, int statusCode, Map<String, Object> data) throws IOException {
         String body = gson.toJson(data);

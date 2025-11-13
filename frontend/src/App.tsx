@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Globe, ListTodo, Activity, Link } from "lucide-react";
+import { ListTodo, Activity, Link } from "lucide-react";
 import TaskList from "./components/TaskList";
 import FileUpload from "@/components/FileUpload.tsx";
 import Notifications from "./components/Notifications";
