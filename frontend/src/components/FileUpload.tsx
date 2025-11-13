@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import {useState, useRef, useEffect} from "react";
 import { Upload, File, X, Download, Loader2 } from "lucide-react";
 import { nioService } from "@/services/nioService";
 
@@ -15,6 +15,25 @@ export default function FileUpload() {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [dragActive, setDragActive] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const fetchFiles = async () => {
+            try {
+                const response = await nioService.getFiles(); // <-- create this method in nioService
+                const serverFiles: UploadedFile[] = response.data.files.map((f: any) => ({
+                    id: f.fileId,
+                    name: f.fileName,
+                    size: f.size,
+                    uploadedAt: new Date(f.uploadedAt),
+                }));
+                setFiles(serverFiles);
+            } catch (error) {
+                console.error("Failed to fetch uploaded files", error);
+            }
+        };
+
+        fetchFiles();
+    }, []);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();

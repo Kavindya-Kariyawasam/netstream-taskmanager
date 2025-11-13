@@ -15,9 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NIOFileServer {
@@ -157,6 +155,8 @@ public class NIOFileServer {
                 handleFileDownload(out, fileId);
             }else if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/files/")) {
                 handleFileDelete(channel.socket().getOutputStream(), path);
+            }else if ("GET".equalsIgnoreCase(method) && path.equals("/files")) {
+                handleListFiles(channel.socket().getOutputStream());
             }else {
                 sendError(out, 404, "Endpoint not found");
             }
@@ -421,8 +421,18 @@ public class NIOFileServer {
         sendJsonResponse(out, 200, Map.of("status", "success", "message", "File deleted successfully"));
     }
 
-
-
+    private void handleListFiles(OutputStream out) throws IOException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (FileMetadata f : fileMetadataStore.values()) {
+            list.add(Map.of(
+                    "fileId", f.getFileId(),
+                    "fileName", f.getOriginalName(),
+                    "size", f.getSize(),
+                    "uploadedAt", System.currentTimeMillis() // or store actual upload time
+            ));
+        }
+        sendJsonResponse(out, 200, Map.of("files", list));
+    }
 
     private void sendJsonResponse(OutputStream out, int statusCode, Map<String, Object> data) throws IOException {
         String body = gson.toJson(data);

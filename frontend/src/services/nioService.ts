@@ -41,6 +41,10 @@ export const nioService = {
 
     deleteFile: async (fileId: string) => {
         return axios.delete(`${NIO_API}/files/${fileId}`);
+    },
+
+    getFiles: async () => {
+        return await axios.get(`${NIO_API}/files`);
     }
 
 };
